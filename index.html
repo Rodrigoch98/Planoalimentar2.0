@@ -237,7 +237,7 @@ body{background:var(--bg,#F0F2F5);color:var(--tm,#111);min-height:100vh;padding-
     <div class="landing-card rodrigo" onclick="selectPerson('rodrigo')">
       <div class="lc-icon">🥗</div>
       <div class="lc-name">Rodrigo</div>
-      <div class="lc-meta">111 → 80 kg<br>44 semanas · 6×/sem</div>
+      <div class="lc-meta">115 → 80 kg<br>44 semanas · 6×/sem</div>
       <div class="lc-goal">🔥 Definição Total</div>
     </div>
     <div class="landing-card marlene" onclick="selectPerson('marlene')">
@@ -259,9 +259,9 @@ body{background:var(--bg,#F0F2F5);color:var(--tm,#111);min-height:100vh;padding-
 <div id="r-t-resumo" class="tc active">
   <div class="rh"><h2>Programa de Emagrecimento</h2><p>Personalizado · Déficit calórico controlado · Baseado em evidências</p>
     <div class="rs"><div class="rst"><div class="rst-v">1450</div><div class="rst-l">kcal/dia</div></div><div class="rst"><div class="rst-v">~135g</div><div class="rst-l">proteína/dia</div></div><div class="rst"><div class="rst-v">~1050</div><div class="rst-l">déficit c/ treino</div></div><div class="rst"><div class="rst-v">1.1kg</div><div class="rst-l">perda/sem</div></div></div>
-    <div class="rpg"><div style="display:flex;justify-content:space-between;font-size:12px"><span><strong id="r-pAt">111 kg</strong></span><span style="font-size:10px;opacity:.7" id="r-pWk">Sem 0/44</span><span>meta <strong>80 kg</strong></span></div><div class="pb"><div class="pf" id="r-pFill"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;margin-top:6px;opacity:.7"><span id="r-pLost">0 kg perdidos</span><span id="r-pRem">~31 kg restantes</span></div></div>
+    <div class="rpg"><div style="display:flex;justify-content:space-between;font-size:12px"><span><strong id="r-pAt">115 kg</strong></span><span style="font-size:10px;opacity:.7" id="r-pWk">Sem 0/44</span><span>meta <strong>80 kg</strong></span></div><div class="pb"><div class="pf" id="r-pFill"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;margin-top:6px;opacity:.7"><span id="r-pLost">0 kg perdidos</span><span id="r-pRem">~35 kg restantes</span></div></div>
   </div>
-  <div class="rg"><div class="rc"><h4>📅 Período</h4><p>02/03 → 03/01/27<br><span style="font-size:12px;color:var(--tmu)">44 sem · 10 cardápios</span></p></div><div class="rc"><h4>🏋️ Treino (início 20/04)</h4><p>6×/semana<br><span style="font-size:12px;color:var(--tmu)">Supersets · 40-50min</span></p></div><div class="rc"><h4>⚖️ TDEE</h4><p>~2.430 kcal<br><span style="font-size:12px;color:var(--tmu)">Mifflin · 111kg · 171cm</span></p></div><div class="rc"><h4>🍗 Proteína</h4><p>128-160g/dia<br><span style="font-size:12px;color:var(--tmu)">1,6-2,0g/kg meta</span></p></div></div>
+  <div class="rg"><div class="rc"><h4>📅 Período</h4><p>02/03 → 03/01/27<br><span style="font-size:12px;color:var(--tmu)">44 sem · 10 cardápios</span></p></div><div class="rc"><h4>🏋️ Treino (início 20/04)</h4><p>6×/semana<br><span style="font-size:12px;color:var(--tmu)">Supersets · 40-50min</span></p></div><div class="rc"><h4>⚖️ TDEE</h4><p>~2.430 kcal<br><span style="font-size:12px;color:var(--tmu)">Mifflin · 115kg · 171cm</span></p></div><div class="rc"><h4>🍗 Proteína</h4><p>128-160g/dia<br><span style="font-size:12px;color:var(--tmu)">1,6-2,0g/kg meta</span></p></div></div>
   <div class="card"><div class="card-title">🚫 Restrições</div><div class="rtg"><span class="rt">🍯 Mel</span><span class="rt">☕ Café</span><span class="rt">🫒 Azeite</span><span class="rt">🥣 Aveia</span><span class="rt">🐟 Salmão</span><span class="rt">🌽 Cuscuz</span><span class="rt">🥗 Saladas</span><span class="rt">🍵 Chás</span><span class="rt">🥜 Pasta amendoim</span></div></div>
 </div>
 
@@ -435,22 +435,75 @@ function gMC(n) {
   if(n.includes('Jantar'))return'jantar';if(n.includes('Ceia')||n.includes('Whey'))return'ceia';return'lanche';
 }
 
+function emojiFor(item) {
+  const t = item.toLowerCase();
+  if(t.includes('frango')||t.includes('sobrecoxa')||t.includes('peito de'))return'🍗';
+  if(t.includes('tilápia')||t.includes('merluza')||t.includes('peixe'))return'🐟';
+  if(t.includes('carne')||t.includes('bife')||t.includes('contrafilé')||t.includes('maminha')||t.includes('costela')||t.includes('pernil')||t.includes('isca')||t.includes('músculo'))return'🥩';
+  if(t.includes('ovo'))return'🥚';
+  if(t.includes('arroz'))return'🍚';
+  if(t.includes('macarrão'))return'🍝';
+  if(t.includes('batata')||t.includes('purê')||t.includes('mandioca'))return'🥔';
+  if(t.includes('feijão')||t.includes('lentilha'))return'🫘';
+  if(t.includes('molho tomate')||t.includes('molho caseiro')||t.includes('molho BBQ')||t.includes('chimichurri'))return'🍅';
+  if(t.includes('muçarela')||t.includes('queijo')||t.includes('requeijão')||t.includes('parmesão')||t.includes('catupiry')||t.includes('coalho')||t.includes('creme leite'))return'🧀';
+  if(t.includes('pão')||t.includes('tortilha'))return'🍞';
+  if(t.includes('tapioca'))return'🫓';
+  if(t.includes('banana'))return'🍌';
+  if(t.includes('morango'))return'🍓';
+  if(t.includes('maçã'))return'🍎';
+  if(t.includes('pera'))return'🍐';
+  if(t.includes('laranja')||t.includes('suco'))return'🍊';
+  if(t.includes('leite')||t.includes('iogurte'))return'🥛';
+  if(t.includes('whey'))return'🥤';
+  if(t.includes('amendoim'))return'🥜';
+  if(t.includes('café'))return'☕';
+  if(t.includes('chá'))return'🍵';
+  if(t.includes('farofa')||t.includes('far. arroz')||t.includes('farinha'))return'🌾';
+  if(t.includes('presunto')||t.includes('peru'))return'🥓';
+  if(t.includes('salada')||t.includes('alface')||t.includes('pepino')||t.includes('cenoura')||t.includes('vinagrete'))return'🥗';
+  if(t.includes('tomate')&&!t.includes('molho'))return'🍅';
+  if(t.includes('shoyu'))return'🥢';
+  if(t.includes('limão'))return'🍋';
+  if(t.includes('canela'))return'✨';
+  if(t.includes('curry')||t.includes('páprica')||t.includes('gengibre')||t.includes('mostarda')||t.includes('orégano')||t.includes('ervas'))return'🌿';
+  return'•';
+}
+
+function isSideItem(item, food) {
+  const t = item.toLowerCase().trim();
+  const fl = food.toLowerCase();
+  if(/^\d+g?\s*arroz/.test(t)) return true;
+  if(/^\d+g?\s*macarrão/.test(t) && !fl.includes('yakisoba') && !fl.includes('bolonhesa') && !fl.includes('canja')) return true;
+  if((/^\d+g?\s*(batata-doce|batata doce|purê\s*batata)/.test(t)) && !fl.includes('escondidinho')) return true;
+  if(/^\d+g?\s*(feijão|lentilha)/.test(t)) return true;
+  if(/^\d+g?\s*mandioca/.test(t)) return true;
+  if(/^\d+(g|ml)?\s*molho\s*(tomate|caseiro)/.test(t) && !fl.includes('estrogonofe') && !fl.includes('bolonhesa')) return true;
+  if(/^\d+g?\s*farofa/.test(t)) return true;
+  if(/\d+\s*ovo\s*cozido/.test(t)) return true;
+  return false;
+}
+
 function fmtF(food) {
   if(!food)return'';
   const RN=['Panqueca','Crepioca','Vitamina','French toast','Omelete','Wrap','Risoto','Sopa','Canja','Escondidinho','Hambúrguer','Pizza caseira','Estrogonofe','Yakisoba'];
   const RE={'Panqueca':'🥞','Crepioca':'🫓','Vitamina':'🥤','French toast':'🍞','Omelete':'🍳','Wrap':'🌯','Risoto':'🍚','Sopa':'🍲','Canja':'🍲','Escondidinho':'🥘','Hambúrguer':'🍔','Pizza caseira':'🍕','Estrogonofe':'🍛','Yakisoba':'🍜'};
-  let label='',clean=food;
-  if(food.startsWith('MARMITA Yakisoba:')){label='<div class="ml">🍜 Yakisoba (Marmita)</div>';clean=food.replace('MARMITA Yakisoba: ','');}
+  let label='',clean=food,isNamed=false;
+  if(food.startsWith('MARMITA Yakisoba:')){label='<div class="ml">🍜 Yakisoba (Marmita)</div>';clean=food.replace('MARMITA Yakisoba: ','');isNamed=true;}
   else if(food.startsWith('MARMITA:')){label='<div class="ml">🍱 Marmita</div>';clean=food.replace('MARMITA: ','');}
-  else{for(const rn of RN){if(food.includes(rn)){label=`<div class="ml">${RE[rn]||'🍽️'} ${rn}</div>`;const ci=food.indexOf(rn);clean=food.substring(ci+rn.length).replace(/^[:\s]+/,'');break;}}}
+  else{for(const rn of RN){if(food.includes(rn)){label=`<div class="ml">${RE[rn]||'🍽️'} ${rn}</div>`;const ci=food.indexOf(rn);clean=food.substring(ci+rn.length).replace(/^[:\s]+/,'');isNamed=true;break;}}}
   const items=clean.split(' + ');
   if(items.length<=1&&!label)return`<div style="font-size:14px;line-height:1.5;margin-bottom:8px;font-weight:500">${food}</div>`;
-  let h=label+'<div class="fl">';
-  items.forEach(item=>{const t=item.trim();if(!t)return;let name=t,measure='';
-  const p3=t.match(/^(.+?)\s+\(([^)]+)\)$/);
-  if(p3){name=p3[1];measure=p3[2];}
-  h+=`<div class="fln"><div class="fld"></div><div class="flc"><span class="flc-n">${name}</span>${measure?`<span class="flc-m">${measure}</span>`:''}</div></div>`;});
-  return h+'</div>';
+  function ri(t){let name=t,measure='';const p3=t.match(/^(.+?)\s+\(([^)]+)\)$/);if(p3){name=p3[1];measure=p3[2];}const em=emojiFor(t);return`<div class="fln"><div class="fld" style="background:transparent;width:auto;height:auto;font-size:14px;margin-top:0">${em}</div><div class="flc"><span class="flc-n">${name}</span>${measure?`<span class="flc-m">${measure}</span>`:''}</div></div>`;}
+  let mainI=[],sideI=[],saladI=[],inSalad=false;
+  items.forEach(item=>{const t=item.trim();if(!t)return;if(t.toLowerCase().startsWith('salada')){inSalad=true;saladI.push(t);}else if(inSalad){saladI.push(t);}else if(!isNamed&&isSideItem(t,food)){sideI.push(t);}else{mainI.push(t);}});
+  let h=label;
+  const hasSep=sideI.length>0||saladI.length>0;
+  if(mainI.length>0){if(hasSep)h+=`<div style="font-size:11px;font-weight:700;color:var(--pd);text-transform:uppercase;letter-spacing:.5px;margin:8px 0 4px;display:flex;align-items:center;gap:4px">🍳 Prato Principal</div>`;h+='<div class="fl">';mainI.forEach(t=>h+=ri(t.trim()));h+='</div>';}
+  if(sideI.length>0){h+=`<div style="font-size:11px;font-weight:700;color:var(--tmu);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--bd);display:flex;align-items:center;gap:4px">🍚 Acompanhamentos</div><div class="fl">`;sideI.forEach(t=>h+=ri(t.trim()));h+='</div>';}
+  if(saladI.length>0){h+=`<div style="font-size:11px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--bd);display:flex;align-items:center;gap:4px">🥗 Salada</div><div class="fl">`;saladI.forEach(t=>h+=ri(t.trim()));h+='</div>';}
+  if(!hasSep&&mainI.length>0&&!label)return'<div class="fl">'+mainI.map(t=>ri(t.trim())).join('')+'</div>';
+  return h;
 }
 
 function fmtTime(secs) {
@@ -479,7 +532,7 @@ class NutritionApp {
       const ws = new Date(s.getTime() + i * 7 * 864e5);
       const we = new Date(ws.getTime() + 6 * 864e5);
       const f = d => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
-      this.WC.push({ num: i+1, type: types[i%types.length], cycle: Math.floor(i/types.length)+1, start: f(ws), end: f(we) });
+      this.WC.push({ num: i+1, type: types[i%10], cycle: Math.floor(i/10)+1, start: f(ws), end: f(we) });
     }
   }
 
@@ -654,11 +707,11 @@ class NutritionApp {
     let wl;
     if (wf <= exStartWeek) {
       // Diet only phase: slower loss
-      const dietOnlyRate = this.px === 'r' ? 0.7 : 0.4;
+      const dietOnlyRate = this.px === 'r' ? 0.83 : 0.4;
       wl = wf * dietOnlyRate;
     } else {
       // Diet + exercise: faster loss
-      const dietOnlyRate = this.px === 'r' ? 0.7 : 0.4;
+      const dietOnlyRate = this.px === 'r' ? 0.83 : 0.4;
       wl = exStartWeek * dietOnlyRate + (wf - exStartWeek) * this.wLoss;
     }
     wl = Math.min(wl, totalLoss);
@@ -690,8 +743,8 @@ function togglePrep(header) {
 // ============================================================
 // INSTANTIATE BOTH APPS
 // ============================================================
-// Rodrigo: start 02/03/2026, 44 weeks, 114→80kg, ~0.77kg/week average
-const R = new NutritionApp('r', R_W, 44, [2026,2,2], 115, 80, 0.77);
+// Rodrigo: start 02/03/2026, 44 weeks, 115→80kg, ~0.79kg/week with exercise
+const R = new NutritionApp('r', R_W, 44, [2026,2,2], 115, 80, 0.79);
 // Marlene: start 10/03/2026, 26 weeks, 89→76kg, 0.5kg/week
 const M = new NutritionApp('m', M_W, 26, [2026,2,9], 89, 76, 0.5);
 
@@ -699,522 +752,20 @@ const M = new NutritionApp('m', M_W, 26, [2026,2,9], 89, 76, 0.5);
 // ============================================================
 // MARLENE EXERCISE DATA + FUNCTIONS (CLEAN)
 // ============================================================
-
-
-// ============================================================
-// ENHANCED FOOD FORMATTER — better emojis + recipe/accompaniment split
-// ============================================================
-function getFoodEmoji(item, labelName='') {
-  const t = String(item || '').toLowerCase();
-  if (/whey|vitamina|parmalat/i.test(t)) return '🥤';
-  if (/iogurte/i.test(t)) return '🥣';
-  if (/leite/i.test(t)) return '🥛';
-  if (/muçarela|mussarela|queijo|requeijão/i.test(t)) return '🧀';
-  if (/ovo/i.test(t)) return '🥚';
-  if (/tilápia|merluza|salmão|peixe/i.test(t)) return '🐟';
-  if (/frango|sobrecoxa|peito peru|peru|presunto/i.test(t)) return '🍗';
-  if (/carne|patinho|maminha|músculo|hambúrguer|costela/i.test(t)) return '🥩';
-  if (/arroz|risoto/i.test(t)) return '🍚';
-  if (/macarr|yakisoba/i.test(t)) return '🍝';
-  if (/pão|toast/i.test(t)) return '🍞';
-  if (/tapioca|crepioca|wrap|tortilha/i.test(t)) return '🫓';
-  if (/batata-doce/i.test(t)) return '🍠';
-  if (/batata|purê|mandioca/i.test(t)) return '🥔';
-  if (/feijão|lentilha|canjica/i.test(t)) return '🫘';
-  if (/salada|alface|pepino|cenoura|vinagrete/i.test(t)) return '🥗';
-  if (/molho|shoyu|mostarda|curry|páprica|canela/i.test(t)) return '🧂';
-  if (/banana/i.test(t)) return '🍌';
-  if (/morango/i.test(t)) return '🍓';
-  if (/maçã/i.test(t)) return '🍎';
-  if (/pera/i.test(t)) return '🍐';
-  if (/laranja|limão/i.test(t)) return '🍊';
-  if (/amendoim/i.test(t)) return '🥜';
-  if (/café/i.test(t)) return '☕';
-  if (/chá|cidreira|hortelã|camomila/i.test(t)) return '🍵';
-  if (/água/i.test(t)) return '💧';
-  if (/marmita/i.test(labelName)) return '🍱';
-  return '🍽️';
-}
-
-function splitFoodGroups(items, labelName='', isMarmita=false) {
-  const blendRecipes = ['Panqueca','Crepioca','French toast','Vitamina','Omelete','Pizza caseira','Estrogonofe','Yakisoba','Escondidinho','Sopa','Canja'];
-  const sideRx = /(arroz|feijão|lentilha|macarr|batata|purê|farofa|salada|vinagrete|molho|pão|tortilha|suco|café|leite|água|chá|cha)/i;
-  if (isMarmita && items.length > 1) {
-    return { principal: [items[0]], extras: items.slice(1) };
-  }
-  if (labelName && blendRecipes.includes(labelName)) {
-    return { principal: items, extras: [] };
-  }
-  const principal = [], extras = [];
-  items.forEach((item, idx) => {
-    if (idx === 0) {
-      principal.push(item);
-      return;
-    }
-    (sideRx.test(item) ? extras : principal).push(item);
-  });
-  if (!principal.length && items.length) principal.push(items[0]);
-  if (!principal.length && !extras.length) return { principal: items, extras: [] };
-  return { principal, extras };
-}
-
-function renderFoodItems(items, labelName='') {
-  let h = '<div class="fl">';
-  items.forEach(item => {
-    const t = String(item || '').trim();
-    if (!t) return;
-    let name = t, measure = '';
-    const p3 = t.match(/^(.+?)\s+\(([^)]+)\)$/);
-    if (p3) { name = p3[1]; measure = p3[2]; }
-    const emoji = getFoodEmoji(name, labelName);
-    h += `<div class="fln"><div class="flc" style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0">${emoji}</span><span><span class="flc-n">${name}</span>${measure ? `<span class="flc-m">${measure}</span>` : ''}</span></div></div>`;
-  });
-  h += '</div>';
-  return h;
-}
-
-function fmtF(food) {
-  if (!food) return '';
-  const RN = ['Panqueca','Crepioca','Vitamina','French toast','Omelete','Wrap','Risoto','Sopa','Canja','Escondidinho','Hambúrguer','Pizza caseira','Estrogonofe','Yakisoba'];
-  const RE = {'Panqueca':'🥞','Crepioca':'🫓','Vitamina':'🥤','French toast':'🍞','Omelete':'🍳','Wrap':'🌯','Risoto':'🍚','Sopa':'🍲','Canja':'🍲','Escondidinho':'🥘','Hambúrguer':'🍔','Pizza caseira':'🍕','Estrogonofe':'🍛','Yakisoba':'🍜'};
-  let label = '', clean = food, labelName = '', isMarmita = false;
-  if (food.startsWith('MARMITA Yakisoba:')) {
-    labelName = 'Yakisoba';
-    label = '<div class="ml">🍜 Yakisoba (Marmita)</div>';
-    clean = food.replace('MARMITA Yakisoba: ', '');
-    isMarmita = true;
-  } else if (food.startsWith('MARMITA:')) {
-    labelName = 'Marmita';
-    label = '<div class="ml">🍱 Marmita</div>';
-    clean = food.replace('MARMITA: ', '');
-    isMarmita = true;
-  } else {
-    for (const rn of RN) {
-      if (food.includes(rn)) {
-        labelName = rn;
-        label = `<div class="ml">${RE[rn] || '🍽️'} ${rn}</div>`;
-        const ci = food.indexOf(rn);
-        clean = food.substring(ci + rn.length).replace(/^[:\s]+/, '');
-        break;
-      }
-    }
-  }
-  const items = clean.split(' + ').map(s => s.trim()).filter(Boolean);
-  if (items.length <= 1 && !label) return `<div style="font-size:14px;line-height:1.5;margin-bottom:8px;font-weight:500">${food}</div>`;
-  const groups = splitFoodGroups(items, labelName, isMarmita);
-  let h = label;
-  if (groups.principal.length) {
-    if (groups.extras.length) h += '<div class="ml" style="margin-top:6px">👨‍🍳 Preparo / principal</div>';
-    h += renderFoodItems(groups.principal, labelName || 'principal');
-  }
-  if (groups.extras.length) {
-    h += '<div class="ml" style="margin-top:6px">🍽️ Acompanhamentos / complementos</div>';
-    h += renderFoodItems(groups.extras, 'acompanhamento');
-  }
-  return h;
-}
-
-// ============================================================
-// EXERCISE DATA
-// ============================================================
-const R_EX_PHASES = [
-  {name:'Base de Construção', weeks:'Sem 1-11', desc:'Adaptação, técnica e fundamentos de força para criar consistência.', dur:'40-45 min', freq:'6×/sem', level:'Inic.-Inter.'},
-  {name:'Hipertrofia de Base', weeks:'Sem 12-22', desc:'Mais carga, supersets e volume para consolidar musculatura.', dur:'45-50 min', freq:'6×/sem', level:'Intermediário'},
-  {name:'Definição Avançada', weeks:'Sem 23-33', desc:'Descansos menores e intensidade maior para definição progressiva.', dur:'50 min', freq:'6×/sem', level:'Inter.-Avançado'},
-  {name:'Escultura Final', weeks:'Sem 34-44', desc:'Circuitos de alta densidade, carga pesada e condicionamento de pico.', dur:'50 min', freq:'6×/sem', level:'Avançado'}
+const M_EX_PHASES=[
+{"name":"Despertar Suave","weeks":"Sem 1-7","desc":"Movimentos gentis, mobilidade e cardio leve","dur":"20-25 min","freq":"5×/sem","level":"Muito Leve"},
+{"name":"Fortalecimento Gradual","weeks":"Sem 8-14","desc":"Resistência leve c/ halteres 3kg","dur":"25-30 min","freq":"5×/sem","level":"Leve"},
+{"name":"Equilíbrio e Resistência","weeks":"Sem 15-20","desc":"Mais tempo nos equipamentos","dur":"30-35 min","freq":"5×/sem","level":"Leve-Moderado"},
+{"name":"Bem-Estar Pleno","weeks":"Sem 21-26","desc":"Corpo forte e flexível. Manutenção","dur":"30-35 min","freq":"5×/sem","level":"Moderado"}
 ];
-const R_EX_EQUIP = [
-  {name:'Estação de Musculação MBX', icon:'🏋️', use:'Supino, puxada, extensora, flexora, tríceps, rosca', when:'Seg a Sex'},
-  {name:'Kit Halteres / Barra', icon:'💪', use:'Supino inclinado, remadas, roscas, afundos e stiff', when:'Seg a Sex'},
-  {name:'Bicicleta Spinning', icon:'🚴', use:'Aquecimento, HIIT e cardio misto', when:'Ter, Qua, Sáb'},
-  {name:'Escalador Vertical', icon:'🧗', use:'Aquecimento e condicionamento', when:'Seg, Qua, Sex'},
-  {name:'Paralela + Barra Fixa', icon:'🔝', use:'Mergulho, abdômen suspenso e puxadas', when:'Seg, Ter, Sex'},
-  {name:'Saco de Pancada', icon:'🥊', use:'Cardio intenso e coordenação', when:'Qua, Sáb'},
-  {name:'Banco Reclinável / Reto', icon:'🪑', use:'Supinos, tríceps francês e desenvolvimento', when:'Seg, Sex'},
-  {name:'Step / Colchonete / Bands', icon:'🧘', use:'Core, mobilidade, apoio e aquecimento', when:'Todos'}
+const M_EX_EQUIP=[
+{"name":"Spinning","icon":"🚴","use":"Cardio sentada","when":"Seg, Qui"},
+{"name":"Escalador Vertical","icon":"🧗","use":"Cardio corpo inteiro","when":"Ter, Sex"},
+{"name":"Colchonete","icon":"🧘","use":"Alongamento, yoga","when":"Todos"},
+{"name":"Halteres 3kg","icon":"🏋️","use":"Braços leves","when":"Ter, Qui"},
+{"name":"Steps","icon":"📐","use":"Subida, apoio","when":"Ter, Qui"},
+{"name":"Super Bands","icon":"🔴","use":"Resistência suave","when":"Qua, Sex"},
+{"name":"Estação (leve)","icon":"🏋️","use":"10-15kg apenas","when":"Qua"},
+{"name":"Caneleiras 3kg","icon":"🦵","use":"Pernas","when":"A partir sem 8"}
 ];
-
-const M_EX_PHASES = [
-  {name:'Despertar Suave', weeks:'Sem 1-7', desc:'Movimentos gentis, mobilidade articular e cardio muito leve.', dur:'20-25 min', freq:'5×/sem', level:'Muito Leve'},
-  {name:'Fortalecimento Gradual', weeks:'Sem 8-14', desc:'Resistência leve com halteres 3kg e faixas. Mais confiança no corpo.', dur:'25-30 min', freq:'5×/sem', level:'Leve'},
-  {name:'Equilíbrio e Resistência', weeks:'Sem 15-20', desc:'Mais tempo nos equipamentos e séries maiores.', dur:'30-35 min', freq:'5×/sem', level:'Leve-Moderado'},
-  {name:'Bem-Estar Pleno', weeks:'Sem 21-26', desc:'Corpo mais forte e flexível, manutenção com prazer.', dur:'30-35 min', freq:'5×/sem', level:'Moderado'}
-];
-const M_EX_EQUIP = [
-  {name:'Bicicleta Spinning', icon:'🚴', use:'Cardio leve sentada', when:'Seg, Qui'},
-  {name:'Escalador Vertical', icon:'🧗', use:'Cardio suave de corpo inteiro', when:'Ter, Sex'},
-  {name:'Colchonete', icon:'🧘', use:'Alongamento, yoga e mobilidade', when:'Todos'},
-  {name:'Halteres 3kg', icon:'🏋️', use:'Exercícios leves de braços', when:'Ter, Qui'},
-  {name:'Steps', icon:'📐', use:'Subida leve e apoio', when:'Ter, Qui'},
-  {name:'Super Bands', icon:'🔴', use:'Resistência suave', when:'Qua, Sex'},
-  {name:'Estação (leve)', icon:'🏋️', use:'Carga 10-15kg apenas', when:'Qua'},
-  {name:'Caneleiras 3kg', icon:'🦵', use:'Fortalecimento de pernas', when:'A partir da sem 8'}
-];
-
-const M_WORKOUTS = {
-  '1': {
-    'Segunda': {title:'Cardio Suave + Mobilidade', focus:'Coração e articulações', time:'~25 min', exercises:[
-      {name:'Aquecimento no Colchonete', sets:'1', reps:'3 min', rest:'-', steps:['Respire fundo 5 vezes no colchonete','Gire tornozelos e punhos 10x para cada lado','Abrace os joelhos e balance suavemente'], tip:'Movimentos leves para iniciar sem dor.'},
-      {name:'Spinning Leve', sets:'1', reps:'10 min', rest:'-', steps:['Pedale com resistência 1-2','Ritmo confortável, sem pressa','Reduza o ritmo nos 2 minutos finais'], tip:'Cardio sentado e controlado.'},
-      {name:'Mobilidade Articular', sets:'1', reps:'8 min', rest:'-', steps:['Pescoço e ombros com movimentos lentos','Gato-vaca leve em 4 apoios','Quadril e tornozelos com amplitude confortável'], tip:'Lubrifica as articulações e reduz rigidez.'}
-    ]},
-    'Terça': {title:'Força Leve + Equilíbrio', focus:'Músculos e estabilidade', time:'~25 min', exercises:[
-      {name:'Aquecimento no Escalador', sets:'1', reps:'5 min', rest:'-', steps:['Velocidade 1 por 5 minutos','Postura ereta e passadas curtas'], tip:'Aquece o corpo inteiro com baixo impacto.'},
-      {name:'Elevação Lateral Sentada', sets:'2×10', reps:'10 repetições', rest:'45s', steps:['Sentada, halteres 3kg nas mãos','Eleve até a altura dos ombros','Desça em 3 segundos'], tip:'Se doer, faça sem peso.'},
-      {name:'Subida no Step com Apoio', sets:'2×8/perna', reps:'8 cada perna', rest:'45s', steps:['Use o step mais baixo','Segure na parede se necessário','Suba e desça controlado'], tip:'Foco em equilíbrio e segurança.'}
-    ]},
-    'Quarta': {title:'Máquina + Core Suave', focus:'Estação leve + abdômen', time:'~25 min', exercises:[
-      {name:'Extensora Leve', sets:'2×10', reps:'10 repetições', rest:'45s', steps:['Use 10-15kg apenas','Suba e desça devagar','Controle total do movimento'], tip:'Fortalece a frente da coxa com segurança.'},
-      {name:'Puxada Leve na Estação', sets:'2×8', reps:'8 repetições', rest:'45s', steps:['Puxe a barra até a altura do peito','Suba devagar controlando o peso'], tip:'Ajuda postura e costas.'},
-      {name:'Prancha nos Joelhos', sets:'2×15s', reps:'15 segundos', rest:'30s', steps:['Antebraços no chão e joelhos apoiados','Corpo alinhado dos joelhos aos ombros'], tip:'Core leve, sem sobrecarga.'}
-    ]},
-    'Quinta': {title:'Cardio + Pernas Leve', focus:'Coração e pernas', time:'~25 min', exercises:[
-      {name:'Spinning Leve', sets:'1', reps:'12 min', rest:'-', steps:['Pedale confortável','Últimos 2 minutos um pouco mais firme'], tip:'Progressão suave do cardio.'},
-      {name:'Ponte de Glúteos', sets:'2×12', reps:'12 repetições', rest:'30s', steps:['Deitada, joelhos dobrados','Suba o quadril apertando glúteos','Desça devagar'], tip:'Fortalece glúteos e lombar de forma gentil.'},
-      {name:'Panturrilha no Step', sets:'2×12', reps:'12 repetições', rest:'30s', steps:['Segure na parede','Suba na ponta dos pés','Desça controlando'], tip:'Melhora circulação e equilíbrio.'}
-    ]},
-    'Sexta': {title:'Mobilidade + Relaxamento', focus:'Corpo e mente', time:'~25 min', exercises:[
-      {name:'Escalador Muito Leve', sets:'1', reps:'5 min', rest:'-', steps:['Velocidade 1','Passos lentos e respiração calma'], tip:'Sexta é dia mais leve.'},
-      {name:'Sequência de Mobilidade', sets:'1', reps:'10 min', rest:'-', steps:['Pescoço, ombros, punhos, coluna, quadril e tornozelos','Movimentos lentos e confortáveis'], tip:'Sessão completa de mobilidade.'},
-      {name:'Relaxamento Guiado', sets:'1', reps:'5 min', rest:'-', steps:['Deite no colchonete','Respiração profunda 4-6','Relaxe cada parte do corpo'], tip:'Ajuda na fibromialgia, ansiedade e sono.'}
-    ]},
-    'Sábado': {title:'Livre / Descanso Ativo', focus:'Movimento prazeroso', time:'~15-20 min', exercises:[{name:'Atividade Livre', sets:'-', reps:'15-20 min', rest:'-', steps:['Caminhada leve, bike suave ou alongamento','Se estiver cansada, descanse sem culpa'], tip:'Ouvir o corpo faz parte do plano.'}]},
-    'Domingo': {title:'Descanso Total', focus:'Recuperação', time:'—', exercises:[{name:'Descanso Completo', sets:'-', reps:'—', rest:'-', steps:['Hidrate-se e durma bem','Prepare as marmitas da semana'], tip:'Recuperação também é treino.'}]}
-  },
-  '2': {
-    'Segunda': {title:'Cardio Moderado + Mobilidade', focus:'Progressão suave', time:'~28 min', exercises:[{name:'Spinning Leve', sets:'1', reps:'12 min', rest:'-', steps:['Resistência 1-2','Ritmo confortável com 2 min extras'], tip:'Leve progressão da fase 1.'},{name:'Mobilidade Articular', sets:'1', reps:'10 min', rest:'-', steps:['Pescoço, ombros, coluna, quadril e tornozelos','Respiração calma o tempo todo'], tip:'Mais tempo de mobilidade para consolidar hábitos.'}]},
-    'Terça': {title:'Força Leve + Equilíbrio', focus:'Braços e pernas', time:'~28 min', exercises:[{name:'Elevação Lateral Sentada', sets:'3×10', reps:'10 repetições', rest:'45s', steps:['Mesmo movimento da fase 1','Mais uma série'], tip:'Progressão por volume.'},{name:'Rosca Bíceps Sentada', sets:'3×10', reps:'10 repetições', rest:'45s', steps:['Halteres 3kg','Suba controlado e desça em 3 segundos'], tip:'Fortalece braços para o dia a dia.'},{name:'Subida no Step', sets:'2×10/perna', reps:'10 cada perna', rest:'45s', steps:['Segure na parede se necessário','Aumente apenas se estiver confortável'], tip:'Mais repetições, mesma segurança.'}]},
-    'Quarta': {title:'Estação + Core', focus:'Confiança com máquinas', time:'~28 min', exercises:[{name:'Extensora Leve', sets:'3×10', reps:'10 repetições', rest:'45s', steps:['10-15kg','Controle total'], tip:'Aumento suave de séries.'},{name:'Puxada na Estação', sets:'3×8', reps:'8 repetições', rest:'45s', steps:['Puxe até o peito','Suba em 3 segundos'], tip:'Fortalece costas sem impacto.'},{name:'Prancha nos Joelhos', sets:'3×20s', reps:'20 segundos', rest:'30s', steps:['Mantenha abdômen ativo','Respire normalmente'], tip:'Mais tempo de sustentação.'}]},
-    'Quinta': {title:'Cardio + Glúteos', focus:'Coração e pernas', time:'~28 min', exercises:[{name:'Spinning Leve', sets:'1', reps:'15 min', rest:'-', steps:['Ritmo confortável','Se estiver bem, eleve levemente nos minutos finais'], tip:'Cardio contínuo e gentil.'},{name:'Ponte de Glúteos', sets:'3×12', reps:'12 repetições', rest:'30s', steps:['Suba o quadril apertando glúteos','Desça devagar'], tip:'Ótimo para cadeia posterior.'},{name:'Panturrilha no Step', sets:'2×15', reps:'15 repetições', rest:'30s', steps:['Amplitude completa','Segure 1-2 segundos no topo'], tip:'Melhora retorno venoso e equilíbrio.'}]},
-    'Sexta': {title:'Mobilidade + Bands', focus:'Bem-estar com resistência leve', time:'~28 min', exercises:[{name:'Escalador Muito Leve', sets:'1', reps:'6 min', rest:'-', steps:['Velocidade 1','Sem forçar'], tip:'Apenas aquecimento.'},{name:'Super Band — Remada Leve', sets:'2×12', reps:'12 repetições', rest:'30s', steps:['Sente ou fique em pé','Puxe a faixa em direção ao corpo','Retorne devagar'], tip:'Resistência suave para costas.'},{name:'Alongamento Final', sets:'1', reps:'8 min', rest:'-', steps:['Posturas leves no colchonete','Respiração 4-6'], tip:'Encerramento relaxante da semana.'}]},
-    'Sábado': {title:'Livre / Descanso Ativo', focus:'Movimento prazeroso', time:'~15-20 min', exercises:[{name:'Atividade Livre', sets:'-', reps:'15-20 min', rest:'-', steps:['Caminhada, bike leve ou alongamento'], tip:'Escolha conforme o corpo pedir.'}]},
-    'Domingo': {title:'Descanso Total', focus:'Recuperação', time:'—', exercises:[{name:'Descanso Completo', sets:'-', reps:'—', rest:'-', steps:['Hidratação, sono e organização da semana'], tip:'Domingo é de recuperação.'}]}
-  },
-  '3': {
-    'Segunda': {title:'Cardio + Mobilidade', focus:'Resistência leve-moderada', time:'~30 min', exercises:[{name:'Spinning Contínuo', sets:'1', reps:'15 min', rest:'-', steps:['Resistência 2-3','Ritmo estável'], tip:'Mais resistência sem sair do conforto.'},{name:'Mobilidade Global', sets:'1', reps:'12 min', rest:'-', steps:['Sequência de coluna, quadril, ombros e tornozelos'], tip:'Mantém flexibilidade e bem-estar.'}]},
-    'Terça': {title:'Força Leve + Step', focus:'Braços, pernas e equilíbrio', time:'~30 min', exercises:[{name:'Elevação Lateral', sets:'3×12', reps:'12 repetições', rest:'40s', steps:['Halteres 3kg','Movimento controlado'], tip:'Ombros ativos sem exagero.'},{name:'Rosca Bíceps', sets:'3×12', reps:'12 repetições', rest:'40s', steps:['Suba em 2s e desça em 3s'], tip:'Braços mais resistentes.'},{name:'Step com Apoio', sets:'3×10/perna', reps:'10 cada perna', rest:'40s', steps:['Subida e descida controladas'], tip:'Mais confiança nas pernas.'}]},
-    'Quarta': {title:'Estação + Core', focus:'Corpo firme', time:'~30 min', exercises:[{name:'Extensora', sets:'3×12', reps:'12 repetições', rest:'45s', steps:['10-15kg','Controle total'], tip:'Coxas mais fortes.'},{name:'Puxada na Estação', sets:'3×10', reps:'10 repetições', rest:'45s', steps:['Puxe até o peito','Controle a volta'], tip:'Costas mais estáveis.'},{name:'Prancha nos Joelhos', sets:'3×25s', reps:'25 segundos', rest:'30s', steps:['Mantenha abdômen ativo'], tip:'Core firme e seguro.'}]},
-    'Quinta': {title:'Cardio + Glúteos', focus:'Condicionamento gentil', time:'~30 min', exercises:[{name:'Spinning Leve', sets:'1', reps:'16 min', rest:'-', steps:['Ritmo estável e confortável'], tip:'Mais autonomia no cardio.'},{name:'Ponte de Glúteos', sets:'3×15', reps:'15 repetições', rest:'30s', steps:['Suba e segure 1 segundo no topo'], tip:'Fortalece glúteos e lombar.'},{name:'Panturrilha no Step', sets:'3×15', reps:'15 repetições', rest:'30s', steps:['Amplitude completa e apoio na parede'], tip:'Ajuda circulação e equilíbrio.'}]},
-    'Sexta': {title:'Mobility Flow', focus:'Soltar o corpo', time:'~30 min', exercises:[{name:'Escalador Suave', sets:'1', reps:'6 min', rest:'-', steps:['Velocidade 1-2','Sem forçar'], tip:'Aquecimento suave.'},{name:'Band Pull + Alongamento', sets:'2×12', reps:'12 repetições', rest:'30s', steps:['Remada com super band','Alongamentos leves para costas e quadril'], tip:'Mistura de força leve e soltura.'},{name:'Relaxamento Final', sets:'1', reps:'8 min', rest:'-', steps:['Respiração profunda no colchonete','Desacelere totalmente'], tip:'Fecha a semana com conforto.'}]},
-    'Sábado': {title:'Livre / Descanso Ativo', focus:'Prazer em se mover', time:'~15-20 min', exercises:[{name:'Atividade Livre', sets:'-', reps:'15-20 min', rest:'-', steps:['Caminhe ou alongue conforme preferir'], tip:'Sem obrigação, apenas bem-estar.'}]},
-    'Domingo': {title:'Descanso Total', focus:'Recuperação', time:'—', exercises:[{name:'Descanso Completo', sets:'-', reps:'—', rest:'-', steps:['Sono, hidratação e rotina leve'], tip:'O corpo também evolui descansando.'}]}
-  },
-  '4': {
-    'Segunda': {title:'Cardio Moderado + Mobilidade', focus:'Manutenção prazerosa', time:'~30-35 min', exercises:[{name:'Spinning Contínuo', sets:'1', reps:'18 min', rest:'-', steps:['Resistência 2-3','Ritmo estável e confortável'], tip:'Cardio contínuo de bem-estar.'},{name:'Mobilidade Global', sets:'1', reps:'12 min', rest:'-', steps:['Pescoço, ombros, coluna, quadril, tornozelos e pernas'], tip:'Soltura completa do corpo.'}]},
-    'Terça': {title:'Força Leve', focus:'Braços e equilíbrio', time:'~30-35 min', exercises:[{name:'Elevação Lateral', sets:'3×12', reps:'12 repetições', rest:'40s', steps:['Halteres 3kg','Amplitude confortável'], tip:'Mantém tônus nos ombros.'},{name:'Rosca Bíceps', sets:'3×12', reps:'12 repetições', rest:'40s', steps:['Controle total do movimento'], tip:'Continuidade sem dor.'},{name:'Step com Apoio', sets:'3×12/perna', reps:'12 cada perna', rest:'40s', steps:['Subida controlada com apoio se necessário'], tip:'Pernas estáveis no dia a dia.'}]},
-    'Quarta': {title:'Estação Leve + Core', focus:'Postura e firmeza', time:'~30-35 min', exercises:[{name:'Extensora', sets:'3×12', reps:'12 repetições', rest:'45s', steps:['Carga leve, movimento bonito'], tip:'Sem exagerar, só manter.'},{name:'Puxada na Estação', sets:'3×10', reps:'10 repetições', rest:'45s', steps:['Puxe ao peito e retorne controlando'], tip:'Costas mais fortes e postura melhor.'},{name:'Prancha nos Joelhos', sets:'3×25s', reps:'25 segundos', rest:'30s', steps:['Abdômen ativo e respiração fluida'], tip:'Core estável para proteger a lombar.'}]},
-    'Quinta': {title:'Cardio + Glúteos', focus:'Leve, contínuo e funcional', time:'~30-35 min', exercises:[{name:'Spinning', sets:'1', reps:'18 min', rest:'-', steps:['Pedalada confortável e ritmada'], tip:'Consistência acima de intensidade.'},{name:'Ponte de Glúteos', sets:'3×15', reps:'15 repetições', rest:'30s', steps:['Suba e segure 1 segundo no topo'], tip:'Ótimo para glúteos e lombar.'},{name:'Panturrilha no Step', sets:'3×15', reps:'15 repetições', rest:'30s', steps:['Use apoio e amplitude completa'], tip:'Equilíbrio e circulação.'}]},
-    'Sexta': {title:'Relaxamento + Mobilidade', focus:'Encerrar bem a semana', time:'~30 min', exercises:[{name:'Escalador Muito Leve', sets:'1', reps:'5 min', rest:'-', steps:['Passos leves e respiração calma'], tip:'Só para aquecer.'},{name:'Flow de Alongamentos', sets:'1', reps:'15 min', rest:'-', steps:['Posturas leves no colchonete','Alongamentos de pernas, quadril, costas e ombros'], tip:'Sessão restauradora.'},{name:'Respiração Guiada', sets:'1', reps:'5 min', rest:'-', steps:['Respire em 4 segundos e solte em 6','Feche a semana desacelerando'], tip:'Ajuda sono e ansiedade.'}]},
-    'Sábado': {title:'Livre / Descanso Ativo', focus:'Movimento sem pressão', time:'~15-20 min', exercises:[{name:'Atividade Livre', sets:'-', reps:'15-20 min', rest:'-', steps:['Faça o que for confortável: caminhar, alongar ou descansar'], tip:'Manutenção com prazer.'}]},
-    'Domingo': {title:'Descanso Total', focus:'Recuperação', time:'—', exercises:[{name:'Descanso Completo', sets:'-', reps:'—', rest:'-', steps:['Sono, água e organização da semana'], tip:'Domingo é para recuperar de verdade.'}]}
-  }
-};
-
-// ============================================================
-// EXERCISE RENDERING + WORKOUT TIMER
-// ============================================================
-const EX_DAYS = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
-const exerciseUi = {
-  r: { day: EX_DAYS[0], view: 'treino' },
-  m: { day: EX_DAYS[0], view: 'treino' }
-};
-
-function getExerciseConfig(person) {
-  return person === 'r'
-    ? { phases: R_EX_PHASES, equip: R_EX_EQUIP, workouts: R_WORKOUTS, totalWeeks: 44, title: 'Rodrigo', icon: '🥗' }
-    : { phases: M_EX_PHASES, equip: M_EX_EQUIP, workouts: M_WORKOUTS, totalWeeks: 26, title: 'Marlene', icon: '🌸' };
-}
-
-function getExercisePhase(person, weekIndex) {
-  if (person === 'r') {
-    if (weekIndex < 11) return 1;
-    if (weekIndex < 22) return 2;
-    if (weekIndex < 33) return 3;
-    return 4;
-  }
-  if (weekIndex < 7) return 1;
-  if (weekIndex < 14) return 2;
-  if (weekIndex < 20) return 3;
-  return 4;
-}
-
-function exAutoDetect(person) {
-  const totalWeeks = getExerciseConfig(person).totalWeeks;
-  const exStart = new Date(2026, 3, 20);
-  const now = new Date();
-  const nM = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const sM = new Date(exStart.getFullYear(), exStart.getMonth(), exStart.getDate());
-  const dd = Math.round((nM - sM) / 864e5);
-  if (dd < 0) return { ewi: 0, edi: 0, started: false, daysUntil: -dd };
-  if (dd >= totalWeeks * 7) return { ewi: totalWeeks - 1, edi: 6, started: true, daysUntil: 0 };
-  return { ewi: Math.min(Math.floor(dd / 7), totalWeeks - 1), edi: Math.min(dd % 7, 6), started: true, daysUntil: 0 };
-}
-
-function setExDay(person, day) {
-  exerciseUi[person].day = day;
-  renderExercises(person);
-}
-
-function setExView(person, view) {
-  exerciseUi[person].view = view;
-  renderExercises(person);
-}
-
-function renderExerciseWorkout(person, day, phase) {
-  const cfg = getExerciseConfig(person);
-  const dayData = (cfg.workouts[String(phase)] || {})[day] || (cfg.workouts[String(phase)] || {})['Segunda'];
-  if (!dayData) return '<div class="card"><div class="card-title">📋 Exercícios</div><div style="font-size:13px;color:var(--ts)">Sem treino disponível para este dia.</div></div>';
-  let h = `<div class="card"><div class="card-title">${dayData.title}<span style="font-size:12px;color:var(--tmu)">${dayData.time}</span></div>`;
-  h += `<div style="font-size:13px;color:var(--ts);margin-bottom:12px"><strong>Foco:</strong> ${dayData.focus}</div>`;
-  dayData.exercises.forEach(ex => {
-    h += `<div class="ex-card ${/descanso/i.test(ex.name) ? 'rest' : ''}">`;
-    h += `<div class="ex-item-h"><div class="ex-item-name">${ex.name}</div><div class="ex-item-badge"><span class="ex-item-b ex-b-sets">${ex.sets}</span><span class="ex-item-b ex-b-rest">${ex.rest}</span></div></div>`;
-    h += `<div class="ex-item-steps"><ol>${(ex.steps || []).map(s => `<li>${s}</li>`).join('')}</ol></div>`;
-    if (ex.tip) h += `<div class="ex-item-tip">💡 ${ex.tip}</div>`;
-    h += `</div>`;
-  });
-  h += `</div>`;
-  return h;
-}
-
-function renderExerciseEquip(person) {
-  const cfg = getExerciseConfig(person);
-  let h = `<div class="card"><div class="card-title">🏠 Equipamentos</div>`;
-  cfg.equip.forEach(eq => {
-    h += `<div class="li"><strong>${eq.icon} ${eq.name}</strong><span>${eq.use}</span><span style="color:var(--pd);font-weight:600">📅 ${eq.when}</span></div>`;
-  });
-  h += `</div>`;
-  return h;
-}
-
-function renderExerciseTips(person) {
-  let h = `<div class="card"><div class="card-title">💡 Diretrizes</div><div style="font-size:13px;color:var(--ts);line-height:1.8">`;
-  if (person === 'r') {
-    h += `<p>Priorizar técnica limpa, respiração contínua e progressão gradual de carga.</p>`;
-    h += `<p>Interromper imediatamente em caso de tontura, dor de cabeça forte ou visão turva.</p>`;
-    h += `<p>Treinos de cardio e core funcionam como aceleradores do déficit calórico.</p>`;
-  } else {
-    h += `<p>Manter a percepção de esforço confortável, sem forçar crises de dor.</p>`;
-    h += `<p>Em dias ruins, reduzir volume ou trocar por mobilidade/descanso ativo.</p>`;
-    h += `<p>Sono, hidratação e constância importam tanto quanto a sessão em si.</p>`;
-  }
-  h += `</div></div>`;
-  return h;
-}
-
-function renderExercises(person) {
-  const cfg = getExerciseConfig(person);
-  const det = exAutoDetect(person);
-  const phase = getExercisePhase(person, det.ewi);
-  const phaseInfo = cfg.phases[phase - 1];
-  const root = document.getElementById(person + '-exContent');
-  if (!root) return;
-  if (!exerciseUi[person].day) exerciseUi[person].day = EX_DAYS[det.edi] || 'Segunda';
-  let h = '';
-  if (!det.started) {
-    h += `<div class="ex-phase" style="background:linear-gradient(135deg,#F59E0B,#D97706)"><h2>⏳ Plano de Exercícios</h2><p>Início em <strong>20/04/2026</strong>. Faltam <strong>${det.daysUntil} dia${det.daysUntil > 1 ? 's' : ''}</strong>.</p></div>`;
-  } else {
-    h += `<div class="ex-phase"><h2>${cfg.icon} Fase ${phase}: ${phaseInfo.name}</h2><p>${phaseInfo.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${phaseInfo.dur}</div><div class="ex-pst-l">por sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${phaseInfo.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${det.ewi + 1}</div><div class="ex-pst-l">semana</div></div><div class="ex-pst"><div class="ex-pst-v">${phaseInfo.level}</div><div class="ex-pst-l">nível</div></div></div></div>`;
-  }
-  h += `<div class="ex-sub-nav"><button class="ex-sub-btn ${exerciseUi[person].view === 'treino' ? 'active' : ''}" onclick="setExView('${person}','treino')">📋 Plano</button><button class="ex-sub-btn ${exerciseUi[person].view === 'equip' ? 'active' : ''}" onclick="setExView('${person}','equip')">🏠 Equip.</button><button class="ex-sub-btn ${exerciseUi[person].view === 'dicas' ? 'active' : ''}" onclick="setExView('${person}','dicas')">💡 Dicas</button><button class="ex-sub-btn" onclick="wmStart('${person}')" style="background:linear-gradient(135deg,var(--s),var(--pd));color:#fff;font-weight:700">▶ Treinar</button></div>`;
-  h += '<div class="dp">' + EX_DAYS.map((d,i) => `<div class="dpi ${exerciseUi[person].day === d ? 'active' : ''} ${i >= 5 ? 'wk' : ''}" onclick="setExDay('${person}','${d}')"><div class="dpi-l">${DL[i]}</div><div class="dpi-d">${DL[i].charAt(0)}</div></div>`).join('') + '</div>';
-  if (exerciseUi[person].view === 'equip') h += renderExerciseEquip(person);
-  else if (exerciseUi[person].view === 'dicas') h += renderExerciseTips(person);
-  else h += renderExerciseWorkout(person, exerciseUi[person].day, phase);
-  root.innerHTML = h;
-}
-
-const _origInit = NutritionApp.prototype.init;
-NutritionApp.prototype.init = function() {
-  _origInit.call(this);
-  renderExercises(this.px);
-};
-const _origShowTab = NutritionApp.prototype.showTab;
-NutritionApp.prototype.showTab = function(id) {
-  _origShowTab.call(this, id);
-  if (id === 'exerc') renderExercises(this.px);
-};
-
-// Progress refinement for Rodrigo starting at 115kg and currently ~111kg
-NutritionApp.prototype.updateP = function() {
-  const d = this.autoDetect();
-  const wf = d.wi + (d.di / 7);
-  const totalLoss = this.wStart - this.wGoal;
-  const exStartWeek = this.px === 'r' ? 7 : 6;
-  const dietOnlyRate = this.px === 'r' ? (4 / 6) : 0.4;
-  let wl;
-  if (wf <= exStartWeek) wl = wf * dietOnlyRate;
-  else wl = exStartWeek * dietOnlyRate + (wf - exStartWeek) * this.wLoss;
-  wl = Math.min(wl, totalLoss);
-  const cw = this.wStart - wl;
-  const pct = Math.min((wl / totalLoss) * 100, 100);
-  const phase = wf < exStartWeek ? '🍽️ Só dieta' : '🔥 Dieta + Treino';
-  const pa = document.getElementById(this.px + '-pAt');
-  const pl = document.getElementById(this.px + '-pWk');
-  const plo = document.getElementById(this.px + '-pLost');
-  const pr = document.getElementById(this.px + '-pRem');
-  const f = document.getElementById(this.px + '-pFill');
-  const b = document.getElementById(this.px + '-hBadge');
-  if (pa) pa.innerHTML = `<strong>${cw.toFixed(1)} kg</strong> estimado`;
-  if (pl) pl.textContent = `Semana ${Math.floor(wf) + 1}/${this.totalWeeks} · ${phase}`;
-  if (plo) plo.textContent = `↓ ${wl.toFixed(1)} kg perdidos`;
-  if (pr) pr.textContent = `${Math.max(totalLoss - wl, 0).toFixed(1)} kg restantes`;
-  if (b) b.textContent = `Sem ${Math.floor(wf) + 1}`;
-  if (f) { f.style.width = '0%'; requestAnimationFrame(() => requestAnimationFrame(() => { f.style.width = Math.max(pct, 2) + '%'; })); }
-};
-
-// Workout modal
-const wmState = { person: null, exercises: [], exIdx: 0, setIdx: 0, timer: null, rest: false, totalSets: 0, doneSets: 0 };
-
-function wmCurrentConfig() {
-  return getExerciseConfig(wmState.person || currentPerson || 'r');
-}
-
-function wmClose() {
-  if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
-  ['r','m'].forEach(p => {
-    const ov = document.getElementById(p + '-wmOverlay');
-    if (ov) ov.classList.remove('active');
-  });
-}
-
-function wmStart(person) {
-  const det = exAutoDetect(person);
-  if (!det.started) return;
-  const cfg = getExerciseConfig(person);
-  const phase = getExercisePhase(person, det.ewi);
-  const day = exerciseUi[person].day || EX_DAYS[det.edi] || 'Segunda';
-  const dayData = (cfg.workouts[String(phase)] || {})[day] || (cfg.workouts[String(phase)] || {})['Segunda'];
-  if (!dayData) return;
-  wmState.person = person;
-  wmState.exercises = dayData.exercises || [];
-  wmState.exIdx = 0;
-  wmState.setIdx = 0;
-  wmState.doneSets = 0;
-  wmState.totalSets = wmState.exercises.reduce((acc, ex) => {
-    const m = String(ex.sets || '').match(/(\d+)/);
-    return acc + (m ? parseInt(m[1], 10) : 1);
-  }, 0);
-  document.getElementById(person + '-wmOverlay').classList.add('active');
-  document.getElementById(person + '-wmTitle').textContent = dayData.title;
-  document.getElementById(person + '-wmSubtitle').textContent = `${day} · ${dayData.time} · ${dayData.focus}`;
-  wmRenderEx();
-}
-
-function wmProgress() {
-  return wmState.totalSets ? Math.min((wmState.doneSets / wmState.totalSets) * 100, 100) : 0;
-}
-
-function wmRenderEx() {
-  const person = wmState.person;
-  const body = document.getElementById(person + '-wmBody');
-  const fill = document.getElementById(person + '-wmProgressFill');
-  if (fill) fill.style.width = wmProgress() + '%';
-  const ex = wmState.exercises[wmState.exIdx];
-  if (!ex) { wmRenderSummary(); return; }
-  const sm = String(ex.sets || '').match(/(\d+)/);
-  const totalSetsForEx = sm ? parseInt(sm[1], 10) : 1;
-  let h = `<div class="wm-ex-card"><div class="wm-ex-name">${ex.name}</div><div class="wm-ex-detail">Série ${wmState.setIdx + 1} de ${totalSetsForEx} · ${ex.reps} · descanso ${ex.rest}</div>`;
-  h += `<div class="wm-set-dots">${Array.from({length: totalSetsForEx}).map((_,i) => `<div class="wm-set-dot ${i < wmState.setIdx ? 'done' : i === wmState.setIdx ? 'current' : ''}"></div>`).join('')}</div>`;
-  const minMatch = String(ex.reps || '').match(/(\d+)\s*min/i);
-  const secMatch = String(ex.reps || '').match(/(\d+)\s*s/i);
-  if (minMatch || secMatch) {
-    const totalSec = secMatch ? parseInt(secMatch[1], 10) : parseInt(minMatch[1], 10) * 60;
-    h += `<div class="wm-timer" id="wmTimerDisplay">${fmtTime(totalSec)}</div>`;
-    h += `<div style="margin:12px 0"><button class="wm-btn wm-btn-primary" id="wmStartSetBtn" onclick="wmStartTimer(${totalSec})">⏱ Iniciar</button></div>`;
-  } else {
-    h += `<div class="wm-timer">${ex.reps}</div>`;
-    h += `<div style="margin:12px 0"><button class="wm-btn wm-btn-primary" onclick="wmCompleteSet()">✅ Concluído</button></div>`;
-  }
-  h += `<div class="wm-steps"><ol>${(ex.steps || []).map(s => `<li>${s}</li>`).join('')}</ol></div>`;
-  if (ex.tip) h += `<div class="wm-tip">💡 ${ex.tip}</div>`;
-  h += `</div><div style="text-align:center;margin-top:8px"><button class="wm-btn wm-btn-outline" onclick="wmSkipEx()" style="min-width:auto;padding:10px 20px;font-size:13px">Pular exercício ⏭</button></div>`;
-  body.innerHTML = h;
-}
-
-function wmStartTimer(secs) {
-  let remaining = secs;
-  const display = document.getElementById('wmTimerDisplay');
-  const btn = document.getElementById('wmStartSetBtn');
-  if (btn) btn.style.display = 'none';
-  if (display) display.textContent = fmtTime(remaining);
-  wmState.timer = setInterval(() => {
-    remaining--;
-    if (display) display.textContent = fmtTime(Math.max(remaining, 0));
-    if (remaining <= 0) {
-      clearInterval(wmState.timer);
-      wmState.timer = null;
-      if (display) { display.textContent = '✓'; display.classList.add('done'); }
-      setTimeout(() => wmCompleteSet(), 800);
-    }
-  }, 1000);
-}
-
-function wmCompleteSet() {
-  if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
-  wmState.setIdx++;
-  wmState.doneSets++;
-  const ex = wmState.exercises[wmState.exIdx];
-  const sm = String(ex.sets || '').match(/(\d+)/);
-  const totalSetsForEx = sm ? parseInt(sm[1], 10) : 1;
-  if (wmState.setIdx >= totalSetsForEx) {
-    wmState.exIdx++;
-    wmState.setIdx = 0;
-    if (wmState.exIdx < wmState.exercises.length) {
-      const restSec = ex.rest && ex.rest !== '-' ? (parseInt(String(ex.rest), 10) || 45) : 30;
-      if (restSec > 5) wmStartRest(restSec);
-      else wmRenderEx();
-    } else wmRenderSummary();
-  } else {
-    const restSec = ex.rest && ex.rest !== '-' ? (parseInt(String(ex.rest), 10) || 45) : 30;
-    wmStartRest(restSec);
-  }
-}
-
-function wmStartRest(secs) {
-  const person = wmState.person;
-  const body = document.getElementById(person + '-wmBody');
-  const fill = document.getElementById(person + '-wmProgressFill');
-  if (fill) fill.style.width = wmProgress() + '%';
-  let remaining = secs;
-  body.innerHTML = `<div class="wm-ex-card"><div class="wm-ex-name">Descanso</div><div class="wm-ex-detail">Prepare-se para o próximo exercício</div><div class="wm-timer rest" id="wmRestDisplay">${fmtTime(remaining)}</div><div style="margin:12px 0"><button class="wm-btn wm-btn-rest" id="wmRestBtn" onclick="wmSkipRest()">⏭ Pular descanso</button></div></div>`;
-  wmState.timer = setInterval(() => {
-    remaining--;
-    const display = document.getElementById('wmRestDisplay');
-    if (display) display.textContent = fmtTime(Math.max(remaining, 0));
-    if (remaining <= 0) {
-      clearInterval(wmState.timer);
-      wmState.timer = null;
-      wmRenderEx();
-    }
-  }, 1000);
-}
-
-function wmSkipRest() {
-  if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
-  wmRenderEx();
-}
-
-function wmSkipEx() {
-  if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
-  wmState.exIdx++;
-  wmState.setIdx = 0;
-  if (wmState.exIdx >= wmState.exercises.length) wmRenderSummary();
-  else wmRenderEx();
-}
-
-function wmRenderSummary() {
-  const person = wmState.person;
-  const body = document.getElementById(person + '-wmBody');
-  const fill = document.getElementById(person + '-wmProgressFill');
-  if (fill) fill.style.width = '100%';
-  body.innerHTML = `<div class="wm-summary"><h2>Treino concluído ✅</h2><div class="wm-summary-grid"><div class="wm-summary-item"><div class="wm-summary-val">${wmState.exercises.length}</div><div class="wm-summary-label">Exercícios</div></div><div class="wm-summary-item"><div class="wm-summary-val">${wmState.doneSets}</div><div class="wm-summary-label">Séries feitas</div></div></div><button class="wm-btn wm-btn-done" onclick="wmClose()">Fechar</button></div>`;
-}
-
-// Render current active app on first paint
-try { R.updateP(); M.updateP(); } catch(e) {}
-if (currentPerson === 'rodrigo' || currentPerson === 'marlene') renderExercises(currentPerson);
-
-</script>
-</body>
-</html>
+const M_WORKOUTS={"1":{"Segunda":{"title":"Cardio Suave + Mobilidade","focus":"Coração e articulações","time":"~25 min","equip":"🚴 Spinning + 🧘 Colchonete","exercises":[{"name":"Aquecimento no Colchonete","sets":"1","reps":"3 min","rest":"-","steps":["Deite no colchonete de barriga para cima, joelhos dobrados","Respire fundo 5 vezes: puxe o ar pelo nariz (4 seg) e solte pela boca (6 seg)","Gire os tornozelos para um lado e para o outro (10 vezes cada)","Gire os punhos para um lado e para o outro (10 vezes cada)","Abrace os dois joelhos contra o peito e balance suavemente para os lados"],"tip":"Esse aquecimento suave prepara as articulações sem dor. Se sentir qualquer dor, diminua o movimento"},{"name":"Spinning Leve — Pedalada Suave","sets":"1","reps":"10 min","rest":"-","steps":["Sente na bicicleta, ajuste o banco para que o joelho fique levemente dobrado","Comece pedalando BEM devagar, resistência 1-2 (a mais leve)","Mantenha um ritmo confortável — você deve conseguir conversar normalmente","Se sentir dor nos joelhos, PARE e ajuste o banco","10 minutos no total — sem pressa, sem competição","Nos últimos 2 minutos, diminua o ritmo gradualmente"],"tip":"A spinning é perfeita para fibromialgia: sem impacto, sentada, e você controla a intensidade. Se doer, diminua a resistência ou pare"},{"name":"Mobilidade Articular no Colchonete","sets":"1","reps":"8 min","rest":"-","steps":["PESCOÇO: Gire a cabeça lentamente para a direita, segure 10 seg. Depois para a esquerda, 10 seg","OMBROS: Encolha os ombros até as orelhas, segure 3 seg, e solte. Repita 8 vezes","QUADRIL: Deitada, joelhos dobrados, deixe os joelhos caírem para um lado (10 seg), depois para o outro","COLUNA: Posição de 4 apoios (mãos e joelhos). Arredonde as costas como um gato (5 seg), depois arqueie como uma vaca (5 seg). Repita 8 vezes","TORNOZELOS: Sentada, gire cada tornozelo 10 vezes para cada lado"],"tip":"Mobilidade articular é o MELHOR exercício para fibromialgia. Lubrifica as articulações e reduz a dor"},{"name":"Relaxamento Final","sets":"1","reps":"4 min","rest":"-","steps":["Deite no colchonete, pernas estendidas, braços ao lado do corpo","Feche os olhos e respire profundamente","A cada expiração, imagine que a tensão está saindo do corpo","Faça 10 ciclos de respiração: 4 seg inspirando, 6 seg expirando","Abra os olhos devagar, gire para o lado e levante-se com calma"],"tip":"O relaxamento final reduz o cortisol (hormônio do estresse) e ajuda com a ansiedade. NUNCA pule essa parte"}]},"Terça":{"title":"Força Leve + Equilíbrio","focus":"Músculos e estabilidade","time":"~25 min","equip":"🧗 Escalador + 🏋️ Halteres 3kg + 📐 Step","exercises":[{"name":"Aquecimento no Escalador","sets":"1","reps":"5 min","rest":"-","steps":["Suba no escalador vertical, segure firme no guidão","Velocidade 1 (a mais lenta) durante 5 minutos","Passos pequenos e lentos — não precisa ir rápido","Mantenha a postura ereta, ombros relaxados"],"tip":"O escalador na velocidade mais lenta é como subir escada bem devagar. Aquece o corpo inteiro suavemente"},{"name":"Elevação Lateral com Halteres 3kg — Sentada","sets":"2×10","reps":"10 repetições","rest":"45s","steps":["Sente na cadeira ou no step, um halter de 3kg em cada mão","Braços soltos ao lado do corpo","Levante os braços para os LADOS até a altura dos ombros (como um pássaro abrindo as asas)","Segure 1 segundo lá em cima","Desça DEVAGAR (3 segundos)","Faça 10 vezes. Descanse 45 segundos. Repita mais 10 vezes"],"tip":"Sentada, o exercício fica mais seguro e estável. Se 3kg doer, faça sem peso primeiro"},{"name":"Rosca Bíceps com Halteres 3kg — Sentada","sets":"2×10","reps":"10 repetições","rest":"45s","steps":["Sentada, um halter em cada mão, braços soltos","Dobre o cotovelo subindo o halter até o ombro (palma virada para cima)","Desça devagar (3 seg). Alterne os braços","Cotovelos colados ao lado do corpo"],"tip":"Fortalece os braços para atividades do dia a dia. Movimento simples e seguro"},{"name":"Subida no Step (sem peso)","sets":"2×8/perna","reps":"8 cada perna","rest":"45s","steps":["Coloque 1 step no chão (15cm — o mais baixo)","Suba com o pé direito, depois o esquerdo","Desça com o pé direito, depois o esquerdo","8 vezes começando com a direita, depois 8 com a esquerda","Segure na parede se precisar de equilíbrio"],"tip":"Fortalece as pernas de forma funcional. Segure na parede sem vergonha — segurança primeiro"},{"name":"Alongamento + Relaxamento","sets":"1","reps":"5 min","rest":"-","steps":["Alongue os ombros: braço cruzado no peito, puxe com a outra mão (20 seg cada)","Alongue as pernas: sentada no colchonete, pernas estendidas, incline para frente (20 seg)","Alongue o pescoço: incline a cabeça para o lado, orelha em direção ao ombro (20 seg cada)","Respiração profunda: 8 ciclos (4 seg inspira, 6 seg expira)"],"tip":"Alongar após exercício de força é essencial para quem tem fibromialgia. Reduz dor e rigidez"}]},"Quarta":{"title":"Máquina + Core Suave","focus":"Estação leve + Abdômen","time":"~25 min","equip":"🏋️ Estação (leve) + 🧘 Colchonete","exercises":[{"name":"Aquecimento — Mobilidade de Pé","sets":"1","reps":"3 min","rest":"-","steps":["Em pé, gire os braços em círculos (10 para frente, 10 para trás)","Gire o tronco suavemente para os lados (10 vezes)","Marche no lugar por 1 minuto (passos leves)"],"tip":"Aquecimento simples e em pé para preparar o corpo"},{"name":"Extensora de Pernas na Estação — MUITO LEVE","sets":"2×10","reps":"10 repetições","rest":"45s","steps":["Sente na estação, pés atrás do rolo da extensora","PESO: coloque apenas 10-15kg (o mais leve possível!)","Estique as pernas para frente DEVAGAR (3 seg subindo)","Segure 1 seg com as pernas esticadas","Desça DEVAGAR (3 seg)","10 vezes. Descanse 45 seg. Repita mais 10"],"tip":"A extensora fortalece a frente da coxa, essencial para proteger os joelhos. PESO LEVE — não é competição!"},{"name":"Puxada na Estação — MUITO LEVE","sets":"2×8","reps":"8 repetições","rest":"45s","steps":["Sente no banco da estação, prenda as pernas","PESO: apenas 10-15kg","Segure a barra larga lá em cima","Puxe para baixo até a altura do peito — DEVAGAR","Suba devagar (3 seg) controlando o peso","Foque nas costas, não nos braços"],"tip":"Fortalecer as costas melhora a postura e reduz dor nas costas — comum na fibromialgia"},{"name":"Prancha no Colchonete (joelhos)","sets":"2×15s","reps":"15 segundos","rest":"30s","steps":["No colchonete, apoie os antebraços e os JOELHOS (não os pés)","Corpo em linha reta dos joelhos aos ombros","Puxe a barriga para dentro (como se quisesse encolher o umbigo)","Segure 15 segundos respirando normalmente","Se começar a tremer, pode parar"],"tip":"Prancha fortalece o abdômen e a lombar. Nos joelhos é muito mais fácil — comece assim"},{"name":"Gato-Vaca (mobilidade coluna)","sets":"1","reps":"10 reps","rest":"-","steps":["Posição de 4 apoios: mãos sob os ombros, joelhos sob o quadril","GATO: Arredonde as costas para CIMA, queixo no peito (expire)","VACA: Arqueie as costas para BAIXO, olhe para cima (inspire)","Alterne lentamente, 3-4 segundos cada posição","10 vezes cada"],"tip":"Gato-Vaca é o exercício mais recomendado para fibromialgia. Alivia dor e rigidez na coluna"},{"name":"Relaxamento Guiado","sets":"1","reps":"5 min","rest":"-","steps":["Deite no colchonete, joelhos dobrados, pés no chão","Coloque as mãos na barriga e sinta ela subir e descer","Contraia e relaxe cada parte do corpo progressivamente:","Pés → Panturrilhas → Coxas → Glúteos → Barriga → Peito → Mãos → Braços → Ombros → Rosto","Ao relaxar cada parte, diga mentalmente 'solto e relaxado'","Fique deitada respirando por 2 minutos"],"tip":"Relaxamento muscular progressivo é técnica clínica para fibromialgia. Reduz dor, ansiedade e insônia"}]},"Quinta":{"title":"Cardio + Pernas Leve","focus":"Coração e pernas","time":"~25 min","equip":"🚴 Spinning + 📐 Step + 🧘 Colchonete","exercises":[{"name":"Spinning Leve","sets":"1","reps":"10 min","rest":"-","steps":["Resistência 1-2, ritmo confortável","Nos últimos 2 min, aumente LEVEMENTE para resistência 3 (se confortável)","Volte para resistência 1 no último minuto"],"tip":"Hoje um pouquinho mais que segunda — se o corpo permitir"},{"name":"Subida no Step (com apoio)","sets":"2×10/perna","reps":"10 cada perna","rest":"45s","steps":["Step no chão (15cm), segure na parede","Suba e desça controlado, 10 cada perna","2 séries (progresso: 8 reps na Fase 1 Terça → 10 reps hoje)"],"tip":"2 repetições a mais que terça — progresso suave!"},{"name":"Elevação de Panturrilha no Step","sets":"2×12","reps":"12 repetições","rest":"30s","steps":["Ponta dos pés no step, calcanhar para fora","Segure na parede para equilíbrio","Suba na ponta dos pés, segure 2 seg no topo","Desça devagar — calcanhar abaixo do step"],"tip":"Panturrilha forte melhora equilíbrio e circulação nas pernas"},{"name":"Ponte de Glúteos no Colchonete","sets":"2×12","reps":"12 repetições","rest":"30s","steps":["Deite de barriga para cima, joelhos dobrados, pés no chão","Levante o quadril apertando o bumbum","Segure 2 seg lá em cima, desça devagar","12 vezes, descanse 30 seg, repita"],"tip":"Fortalece glúteos e lombar — importantes após histerectomia para estabilidade pélvica"},{"name":"Alongamento + Respiração","sets":"1","reps":"5 min","rest":"-","steps":["Alongue quadríceps: de pé, segure o pé atrás (20 seg cada)","Alongue panturrilha: pé na parede inclinado (20 seg cada)","Alongue glúteo: deitada, cruze tornozelo sobre joelho oposto e puxe (20 seg cada)","Respiração: 8 ciclos profundos"],"tip":"Alongamento finaliza o treino e prepara para uma noite de sono melhor"}]},"Sexta":{"title":"Mobilidade + Relaxamento","focus":"Corpo e mente — Sessão de Bem-Estar","time":"~25 min","equip":"🧗 Escalador + 🧘 Colchonete","exercises":[{"name":"Escalador Muito Leve","sets":"1","reps":"5 min","rest":"-","steps":["Velocidade 1, passos bem lentos","Foque em respirar calmamente","5 minutos apenas para aquecer"],"tip":"Sexta é dia mais leve — foque no bem-estar, não no esforço"},{"name":"Sequência de Mobilidade Completa","sets":"1","reps":"10 min","rest":"-","steps":["PESCOÇO: Gire lentamente para cada lado (15 seg cada)","OMBROS: Encolha e gire para trás 10 vezes","PUNHOS: Gire 10 vezes cada direção","COLUNA: Gato-Vaca 8 repetições","QUADRIL: Deitada, joelhos dobrados, deixe cair para os lados (8 vezes)","TORNOZELOS: Gire 10 vezes cada","PERNAS: Deitada, puxe um joelho ao peito (20 seg cada)"],"tip":"Sessão completa de mobilidade. Cada articulação recebe atenção especial"},{"name":"Alongamento Profundo — Yoga Suave","sets":"1","reps":"8 min","rest":"-","steps":["CHILD'S POSE: Ajoelhe, sente nos calcanhares, estenda os braços para frente no chão (45 seg)","COBRA SUAVE: Deite de bruços, mãos sob os ombros, erga APENAS o peito (15 seg × 3)","BORBOLETA: Sentada, solas dos pés juntas, joelhos abertos, incline levemente (30 seg)","TORÇÃO DEITADA: Deitada, joelhos para um lado, braços abertos (30 seg cada lado)","PERNAS NA PAREDE: Deite com as pernas apoiadas na parede (2 min) — circulação"],"tip":"Posturas de yoga são clinicamente comprovadas para fibromialgia. Reduzem dor, ansiedade e depressão em até 30%"},{"name":"Relaxamento + Gratidão","sets":"1","reps":"5 min","rest":"-","steps":["Deite no colchonete, olhos fechados","Relaxamento progressivo: contraia e relaxe cada músculo","Pense em 3 coisas boas que aconteceram na semana","Respiração: 10 ciclos lentos (4 inspira, 6 expira)","Parabéns — você completou a semana!"],"tip":"A prática de gratidão combinada com relaxamento tem efeito comprovado contra depressão e ansiedade"}]},"Sábado":{"title":"Livre / Descanso Ativo","focus":"Opcional — Movimento Prazeroso","time":"~15-20 min","equip":"Qualquer equipamento livre","exercises":[{"name":"Atividade Livre (opcional)","sets":"-","reps":"15-20 min","rest":"-","steps":["Opção A: Caminhada leve pelo bairro (15-20 min)","Opção B: Spinning bem leve (10 min) + alongamento (10 min)","Opção C: Apenas sessão de alongamento/yoga no colchonete (15 min)","Opção D: Descanso total — sem culpa!","Escolha conforme se sentir. Se estiver com dor de fibro, descanse"],"tip":"Na fibromialgia, escutar o corpo é FUNDAMENTAL. Se estiver num dia de crise, descansar É treinar"}]},"Domingo":{"title":"Descanso Total","focus":"Recuperação","time":"—","equip":"Nenhum","exercises":[{"name":"Descanso Completo","sets":"-","reps":"—","rest":"-","steps":["Dia de recuperação total","Hidrate-se: 2-2,5L de água","Durma 7-9 horas (sono é CRUCIAL para fibromialgia)","Se quiser, faça 5 min de respiração profunda antes de dormir","Prepare as marmitas da semana"],"tip":"Sono de qualidade é o tratamento nº1 para fibromialgia. Priorize dormir bem"}]}},"2":{"Segunda":{"title":"Cardio Moderado + Mobilidade","focus":"Coração e articulações","time":"~25 min","equip":"🚴 Spinning + 🧘 Colchonete","exercises":[{"name":"Aquecimento no Colchonete","sets":"1","reps":"3 min","rest":"-","steps":["Deite no colchonete de barriga para cima, joelhos dobrados","Respire fundo 5 vezes: puxe o ar pelo nariz (4 seg) e solte pela boca (6 seg)","Gire os tornozelos para um lado e para o outro (10 vezes cada)","Gire os punhos para um lado e para o outro (10 vezes cada)","Abrace os dois joelhos contra o peito e balance suavemente para os lados"],"tip":"Esse aquecimento suave prepara as articulações sem dor. Se sentir qualquer dor, diminua o movimento"},{"name":"Spinning Leve — Pedalada Suave","sets":"1","reps":"12 min","rest":"-","steps":["Sente na bicicleta, ajuste o banco para que o joelho fique levemente dobrado","Comece pedalando BEM devagar, resistência 1-2 (a mais leve)","Mantenha um ritmo confortável — você deve conseguir conversar normalmente","Se sentir dor nos joelhos, PARE e ajuste o banco","12 minutos no total — aumente 2 min em relação à Fase 1","Nos últimos 2 minutos, diminua o ritmo gradualmente"],"tip":"A spinning é perfeita para fibromialgia: sem impacto, sentada, e você controla a intensidade. Se doer, diminua a resistência ou pare"},{"name":"Mobilidade Articular no Colchonete","sets":"1","reps":"8 min","rest":"-","steps":["PESCOÇO: Gire a cabeça lentamente para a direita, segure 10 seg. Depois para a esquerda, 10 seg","OMBROS: Encolha os ombros até as orelhas, segure 3 seg, e solte. Repita 8 vezes","QUADRIL: Deitada, joelhos dobrados, deixe os joelhos caírem para um lado (10 seg), depois para o outro","COLUNA: Posição de 4 apoios (mãos e joelhos). Arredonde as costas como um gato (5 seg), depois arqueie como uma vaca (5 seg). Repita 8 vezes","TORNOZELOS: Sentada, gire cada tornozelo 10 vezes para cada lado"],"tip":"Mobilidade articular é o MELHOR exercício para fibromialgia. Lubrifica as articulações e reduz a dor"},{"name":"Relaxamento Final","sets":"1","reps":"4 min","rest":"-","steps":["Deite no colchonete, pernas estendidas, braços ao lado do corpo","Feche os olhos e respire profundamente","A cada expiração, imagine que a tensão está saindo do corpo","Faça 10 ciclos de respiração: 4 seg inspirando, 6 seg expirando","Abra os olhos devagar, gire para o lado e levante-se com calma"],"tip":"O relaxamento final reduz o cortisol (hormônio do estresse) e ajuda com a ansiedade. NUNCA pule essa parte"}]},"Terça":{"title":"Força Leve 
