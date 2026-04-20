@@ -2005,6 +2005,345 @@ function wmRenderSummary() {
   document.getElementById(px + '-wmBody').innerHTML = h;
 }
 
+
+
+// ================= V4 PATCH: week navigation, contrast, skip-step, cumulative equipment =================
+(function(){
+  const style = document.createElement('style');
+  style.id = 'v4-exercise-fixes';
+  style.textContent = `
+    :root{color-scheme:light}
+    .wm-hdr,.wm-hdr *{forced-color-adjust:none;-webkit-text-fill-color:currentColor}
+    .app.rodrigo .wm-hdr{background:linear-gradient(135deg,#5B21B6,#7C3AED)!important;color:#fff!important}
+    .app.marlene .wm-hdr{background:linear-gradient(135deg,#7C3A67,#B76E91)!important;color:#fff!important}
+    .app.ivo .wm-hdr{background:linear-gradient(135deg,#1E3A8A,#2563EB)!important;color:#fff!important}
+    .app.rafael .wm-hdr{background:linear-gradient(135deg,#9A3412,#EA580C)!important;color:#fff!important}
+    .wm-hdr h2,.wm-hdr .wm-hdr-sub,.wm-hdr .wm-close,.wm-hdr button,.wm-hdr div,.wm-hdr span{color:inherit!important;-webkit-text-fill-color:currentColor!important;text-shadow:none!important}
+    .wm-close{background:rgba(0,0,0,.18)!important;border:1px solid rgba(255,255,255,.2)!important}
+    .wm-progress{background:rgba(255,255,255,.22)!important}
+    .ex-week-wrap{margin-bottom:14px}
+    .ex-week-note{font-size:11px;color:var(--tmu);margin-top:6px;text-align:center}
+  `;
+  document.head.appendChild(style);
+})();
+
+function __fmtShortDateBR(d){
+  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+}
+function __getExerciseStartDate(weekIndex){
+  const d = new Date(2026,3,20);
+  d.setDate(d.getDate() + ((weekIndex||0) * 7));
+  return d;
+}
+function __getExerciseWeekRange(weekIndex){
+  const start = __getExerciseStartDate(weekIndex||0);
+  const end = new Date(start.getTime());
+  end.setDate(end.getDate()+6);
+  return {start:start,end:end,label:__fmtShortDateBR(start)+' a '+__fmtShortDateBR(end)};
+}
+function __parseLeadingNum(str){
+  const m = String(str||'').match(/(\d+)/);
+  return m ? parseInt(m[1],10) : null;
+}
+function __incSetsString(str, inc, max){
+  if(!str || str==='-') return str;
+  return String(str).replace(/^(\d+)/, function(_,n){ return String(Math.min(parseInt(n,10)+inc,max||99)); });
+}
+function __adjustRestString(str, delta){
+  if(!str || str==='-') return str;
+  const m = String(str).match(/(\d+)/);
+  if(!m) return str;
+  const num = Math.max(20, parseInt(m[1],10) + delta);
+  return String(str).replace(/\d+/, String(num));
+}
+function __replaceRepRange(str, addMin, addMax){
+  if(!str || str==='-') return str;
+  return String(str).replace(/(\d+)\s*(?:-|a)\s*(\d+)\s*reps/i, function(_,a,b){
+    return (parseInt(a,10)+addMin) + '-' + (parseInt(b,10)+addMax) + ' reps';
+  }).replace(/(\d+)\s*reps/i, function(_,a){
+    const x=parseInt(a,10); return (x+addMin) + '-' + (x+addMax) + ' reps';
+  });
+}
+function __weekVariantLabel(weekIndex){
+  return ['Base técnica','Volume progressivo','Controle fino','Densidade limpa'][Math.abs(weekIndex||0)%4];
+}
+function __mutateExerciseForWeek(ex, weekIndex){
+  const out = cloneObj(ex||{});
+  const v = Math.abs(weekIndex||0)%4;
+  const name = normalizeText(out.name);
+  if(name.indexOf('descanso')>=0 || name.indexOf('recuperação')>=0 || name.indexOf('volta à calma')>=0 || name.indexOf('alongamento')>=0 || name.indexOf('mobilidade')>=0) return out;
+  if(v===1){
+    if(out.sets && out.sets !== '-' && __parseLeadingNum(out.sets) && __parseLeadingNum(out.sets) < 5) out.sets = __incSetsString(out.sets, 1, 5);
+    if(out.reps && out.reps !== '—') out.reps = __replaceRepRange(out.reps, 0, 2);
+    if(out.rest && out.rest !== '-') out.rest = __adjustRestString(out.rest, -5);
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Semana de volume: manter a mesma técnica mesmo com um pouco mais de trabalho.';
+  } else if(v===2){
+    if(name.indexOf('rosca alternada')>=0) out.name = out.name.replace(/Rosca alternada/i,'Rosca martelo alternada');
+    else if(name.indexOf('supino')>=0) out.name = out.name + ' com pausa de 1 segundo embaixo';
+    else if(name.indexOf('remada unilateral')>=0 || name.indexOf('remada baixa')>=0) out.name = out.name + ' com 1 segundo de isometria';
+    else if(name.indexOf('agachamento')>=0) out.name = out.name + ' com pausa no fundo';
+    else if(name.indexOf('ponte de glúteos')>=0 || name.indexOf('hip thrust')>=0) out.name = out.name + ' com pausa de 2 segundos';
+    else if(name.indexOf('prancha')>=0) out.name = out.name.replace(/Prancha/i,'Prancha com toque alternado');
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Semana de controle: segurar a posição forte por 1 segundo e evitar qualquer balanço.';
+  } else if(v===3){
+    if(out.rest && out.rest !== '-') out.rest = __adjustRestString(out.rest, -10);
+    if(out.sets && out.sets !== '-' && __parseLeadingNum(out.sets) && __parseLeadingNum(out.sets) > 2) out.sets = __incSetsString(out.sets, 0, 99);
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Semana de densidade: descansos um pouco menores, sem acelerar a execução.';
+  }
+  return out;
+}
+function __applyWeekVariation(workout, weekIndex, person){
+  const w = cloneObj(workout||{});
+  const label = __weekVariantLabel(weekIndex);
+  w.title = (w.title || 'Treino') + ' · ' + label;
+  w.focus = (w.focus ? w.focus + ' · ' : '') + 'microciclo ' + label.toLowerCase();
+  w.exercises = (w.exercises||[]).map(function(ex, idx){
+    const changed = __mutateExerciseForWeek(ex, weekIndex, person);
+    if(idx===0 && changed.tip) changed.tip = changed.tip + ' Primeira série sempre mais leve para ensaiar o movimento.';
+    return changed;
+  });
+  return w;
+}
+
+function getEquipmentWindowInfo(refDate){
+  const current = dateOnly(refDate || new Date());
+  const cut = new Date(2026,3,27);
+  if(current >= cut){
+    return {
+      mode:'combo27',
+      title:'Janela de equipamentos ativa',
+      summary:'Bike · Estação MBX sentada/em pé · Step · Super band · Caneleiras 3kg · Banco regulável · Halteres 5/7/10kg · Kettlebells 6/8kg · Mini bands · Peso corporal/tapete',
+      note:'A partir da semana de 27/04/2026 permanecem disponíveis os equipamentos da semana de 20/04/2026 e entram também banco regulável, halteres de 5kg/7kg/10kg, kettlebells de 6kg/8kg e mini bands.',
+      pill:'Equipamentos anteriores + novos'
+    };
+  }
+  return {
+    mode:'pre27',
+    title:'Janela de equipamentos ativa',
+    summary:'Bike · Estação MBX sentada/em pé · Step · Super band · Caneleiras 3kg · Peso corporal/tapete',
+    note:'Até 26/04/2026 os treinos usam apenas os equipamentos anteriores. A partir da semana de 27/04/2026 os equipamentos anteriores continuam e se somam aos novos.',
+    pill:'Somente equipamentos anteriores'
+  };
+}
+
+function getProcessedWorkout(person, workout, ctx){
+  const weekIndex = ctx && typeof ctx.weekIndex === 'number' ? ctx.weekIndex : 0;
+  const refDate = __getExerciseStartDate(weekIndex);
+  const windowInfo = getEquipmentWindowInfo(refDate);
+  if(!workout) return {workout:null,window:windowInfo};
+  let w = cloneObj(workout);
+  const useNewFocusedVariant = windowInfo.mode === 'combo27' && (Math.abs(weekIndex)%2===1);
+  w.exercises = (w.exercises||[]).map(function(ex){
+    if(windowInfo.mode === 'pre27') return transformExerciseByWindow(person, ex, {mode:'pre27', day:ctx.day, phase:ctx.phase});
+    if(useNewFocusedVariant) return transformExerciseByWindow(person, ex, {mode:'post27', day:ctx.day, phase:ctx.phase});
+    const out = cloneObj(ex||{});
+    const tpl = exerciseTemplate(out, {person:person, mode:'combo27', day:ctx.day, phase:ctx.phase});
+    out.steps = tpl.steps;
+    out.tip = tpl.tip || out.tip;
+    return out;
+  });
+  w = __applyWeekVariation(w, weekIndex, person);
+  w.equip = windowInfo.summary;
+  const variantNote = windowInfo.mode === 'combo27' ? (useNewFocusedVariant ? 'semana com ênfase maior nos equipamentos novos' : 'semana com ênfase maior na base já usada antes de 27/04') : 'janela anterior de equipamentos até 26/04';
+  w.focus = (w.focus ? w.focus + ' · ' : '') + variantNote;
+  return {workout:w, window:windowInfo};
+}
+
+let r_exWeek = r_exAutoDetect().ewi;
+let m_exWeek = m_exAutoDetect().ewi;
+let i_exWeek = i_exAutoDetect().ewi;
+let rf_exWeek = rf_exAutoDetect().ewi;
+function r_navExWeek(dir){ r_exWeek = Math.max(0, Math.min(43, r_exWeek + dir)); r_renderEx(); }
+function m_navExWeek(dir){ m_exWeek = Math.max(0, Math.min(25, m_exWeek + dir)); m_renderEx(); }
+function i_navExWeek(dir){ i_exWeek = Math.max(0, Math.min(23, i_exWeek + dir)); i_renderEx(); }
+function rf_navExWeek(dir){ rf_exWeek = Math.max(0, Math.min(23, rf_exWeek + dir)); rf_renderEx(); }
+function r_setExWeek(idx){ r_exWeek = Math.max(0, Math.min(43, idx)); r_renderEx(); }
+function m_setExWeek(idx){ m_exWeek = Math.max(0, Math.min(25, idx)); m_renderEx(); }
+function i_setExWeek(idx){ i_exWeek = Math.max(0, Math.min(23, idx)); i_renderEx(); }
+function rf_setExWeek(idx){ rf_exWeek = Math.max(0, Math.min(23, idx)); rf_renderEx(); }
+
+function __buildExerciseWeekNav(prefix, weekIndex, totalWeeks, navFnName){
+  const range = __getExerciseWeekRange(weekIndex);
+  return '<div class="ex-week-wrap"><div class="wn"><div class="wn-a" onclick="'+navFnName+'(-1)">‹</div><div class="wn-c"><div class="wn-n">Semana de treino '+(weekIndex+1)+' de '+totalWeeks+'</div><div class="wn-d">'+range.label+'</div><span class="wn-t">progressão semanal com variedade</span></div><div class="wn-a" onclick="'+navFnName+'(1)">›</div></div><div class="ex-week-note">As semanas mudam volume, controle e densidade para evitar repetição engessada.</div></div>';
+}
+
+function __renderExercisePlan(cfg){
+  const container = document.getElementById(cfg.containerId);
+  if(!container) return;
+  const weekIndex = cfg.getWeek();
+  const phase = cfg.getPhase(weekIndex);
+  const pi = cfg.phases[phase-1];
+  const badge = document.getElementById(cfg.badgeId);
+  if(badge) badge.textContent = 'Sem ' + (weekIndex+1);
+  let h = '';
+  h += `<div class="ex-phase"><h2>${cfg.emoji} Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${weekIndex+1}</div><div class="ex-pst-l">semana</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.level}</div><div class="ex-pst-l">nível</div></div></div></div>`;
+  if(cfg.warningHtml) h += cfg.warningHtml;
+  h += __buildExerciseWeekNav(cfg.prefix, weekIndex, cfg.totalWeeks, cfg.navFnName);
+  h += `<div style="display:flex;gap:8px;margin-bottom:14px"><button onclick="wmStart('${cfg.person}')" style="padding:12px 20px;background:${cfg.buttonBg};color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:${cfg.buttonShadow}">▶ Treinar</button><div class="dp" style="flex:1;margin-bottom:0">`;
+  DO.forEach((d,idx)=>{ h += `<div class="dpi ${d===cfg.getDay()?'active':''} ${idx>=5?'wk':''}" onclick="${cfg.setDayFnName}('${d}')"><div class="dpi-l">${DL[idx]}</div><div class="dpi-d">${DL[idx].charAt(0)}</div></div>`; });
+  h += `</div></div>`;
+  container.innerHTML = h;
+
+  const processed = getProcessedWorkout(cfg.person, cfg.workouts[String(phase)]?.[cfg.getDay()], {phase:phase, day:cfg.getDay(), weekIndex:weekIndex});
+  const workout = processed.workout;
+  if(!workout){ container.insertAdjacentHTML('beforeend','<p style="text-align:center;color:var(--tmu);padding:40px">Sem treino</p>'); return; }
+  container.insertAdjacentHTML('beforeend', buildWindowBanner(processed.window, cfg.bannerAccent));
+  const isRest = cfg.getDay()==='Domingo' || (workout.time||'')==='—';
+  let eh = `<div class="ex-card ${isRest?'rest':''}"><div class="ex-card-h"><div><div class="ex-card-n">${workout.title}</div><div style="font-size:12px;color:var(--ts);margin-top:2px">${workout.focus||''}</div></div><div class="ex-card-t">⏱ ${workout.time||'—'}</div></div>`;
+  if(workout.equip) eh += `<div style="font-size:12px;color:${cfg.equipColor};font-weight:600;margin-bottom:10px;padding:6px 10px;background:${cfg.equipBg};border-radius:8px;border:1px solid ${cfg.equipBorder}">🏠 ${workout.equip}</div>`;
+  workout.exercises.forEach(function(ex){
+    eh += `<div class="ex-item"><div class="ex-item-h"><div class="ex-item-name">${ex.name}</div><div class="ex-item-badge">`;
+    if(ex.sets && ex.sets !== '-') eh += `<span class="ex-item-b ex-b-sets">${ex.sets}</span>`;
+    if(ex.rest && ex.rest !== '-') eh += `<span class="ex-item-b ex-b-rest">⏸ ${ex.rest}</span>`;
+    eh += `</div></div>`;
+    eh += `<details class="meal-subs" style="border:none;padding:0;margin:0;background:none"><summary style="color:${cfg.summaryColor}">📋 Passo a passo</summary><div class="ex-item-steps"><ol>`;
+    (ex.steps||[]).forEach(function(s){ eh += `<li>${s}</li>`; });
+    eh += `</ol></div>`;
+    if(ex.tip) eh += `<div class="ex-item-tip">💡 ${ex.tip}</div>`;
+    eh += `</details></div>`;
+  });
+  eh += '</div>';
+  container.insertAdjacentHTML('beforeend', eh);
+}
+
+function r_renderEx(){
+  __renderExercisePlan({
+    person:'rodrigo', prefix:'r', containerId:'r-exContent', badgeId:'r-hBadge', totalWeeks:44,
+    getWeek:function(){ return r_exWeek; }, getPhase:r_getExPhase, phases:R_EX_PHASES, workouts:R_WORKOUTS,
+    getDay:function(){ return r_exDay; }, setDayFnName:'r_setExDay', navFnName:'r_navExWeek', emoji:'🏋️',
+    buttonBg:'linear-gradient(135deg,#7C3AED,#5B21B6)', buttonShadow:'0 4px 12px rgba(124,58,237,.3)',
+    bannerAccent:'orange', equipColor:'#5B21B6', equipBg:'#F3E8FF', equipBorder:'#DDD6FE', summaryColor:'var(--pd)'
+  });
+}
+function m_renderEx(){
+  __renderExercisePlan({
+    person:'marlene', prefix:'m', containerId:'m-exContent', badgeId:'m-hBadge', totalWeeks:26,
+    getWeek:function(){ return m_exWeek; }, getPhase:m_getExPhase, phases:M_EX_PHASES, workouts:M_WORKOUTS,
+    getDay:function(){ return m_exDay; }, setDayFnName:'m_setExDay', navFnName:'m_navExWeek', emoji:'🌸',
+    buttonBg:'linear-gradient(135deg,#B08DD4,#D46A8A)', buttonShadow:'0 4px 12px rgba(176,141,212,.3)',
+    bannerAccent:'pink', equipColor:'#6D42A0', equipBg:'#F8F3FD', equipBorder:'#E8D4F0', summaryColor:'#6D42A0'
+  });
+}
+function i_renderEx(){
+  __renderExercisePlan({
+    person:'ivo', prefix:'i', containerId:'i-exContent', badgeId:'i-hBadge', totalWeeks:24,
+    getWeek:function(){ return i_exWeek; }, getPhase:i_getExPhase, phases:IVO_EX_PHASES, workouts:IVO_WORKOUTS,
+    getDay:function(){ return i_exDay; }, setDayFnName:'i_setExDay', navFnName:'i_navExWeek', emoji:'💙',
+    buttonBg:'linear-gradient(135deg,#1E40AF,#3B82F6)', buttonShadow:'0 4px 12px rgba(59,130,246,.3)',
+    bannerAccent:'orange', equipColor:'#1E40AF', equipBg:'#EFF6FF', equipBorder:'#BFDBFE', summaryColor:'#1E40AF'
+  });
+}
+function rf_renderEx(){
+  __renderExercisePlan({
+    person:'rafael', prefix:'rf', containerId:'rf-exContent', badgeId:'rf-hBadge', totalWeeks:24,
+    getWeek:function(){ return rf_exWeek; }, getPhase:rf_getExPhase, phases:RAFAEL_EX_PHASES, workouts:RAFAEL_WORKOUTS,
+    getDay:function(){ return rf_exDay; }, setDayFnName:'rf_setExDay', navFnName:'rf_navExWeek', emoji:'🔥',
+    warningHtml:'<div style="background:#FEF3C7;border-left:4px solid #F59E0B;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#78350F"><strong>⚠️ Importante:</strong> priorizar técnica, descanso entre séries e progressão gradual. Nada de testar carga máxima.</div>',
+    buttonBg:'linear-gradient(135deg,#EA580C,#F97316)', buttonShadow:'0 4px 12px rgba(249,115,22,.3)',
+    bannerAccent:'orange', equipColor:'#C2410C', equipBg:'#FFF7ED', equipBorder:'#FED7AA', summaryColor:'#C2410C'
+  });
+}
+
+function wmStart(person) {
+  const pxMap = {rodrigo:'r', marlene:'m', ivo:'i', rafael:'rf'};
+  const px = pxMap[person] || 'r';
+  let phase, workout, exDay, weekIndex;
+  if (person === 'rodrigo') {
+    weekIndex = r_exWeek; phase = r_getExPhase(weekIndex); exDay = r_exDay; workout = R_WORKOUTS[String(phase)]?.[exDay];
+  } else if (person === 'marlene') {
+    weekIndex = m_exWeek; phase = m_getExPhase(weekIndex); exDay = m_exDay; workout = M_WORKOUTS[String(phase)]?.[exDay];
+  } else if (person === 'ivo') {
+    weekIndex = i_exWeek; phase = i_getExPhase(weekIndex); exDay = i_exDay; workout = IVO_WORKOUTS[String(phase)]?.[exDay];
+  } else if (person === 'rafael') {
+    weekIndex = rf_exWeek; phase = rf_getExPhase(weekIndex); exDay = rf_exDay; workout = RAFAEL_WORKOUTS[String(phase)]?.[exDay];
+  }
+  const processed = getProcessedWorkout(person, workout, {phase:phase, day:exDay, weekIndex:weekIndex});
+  workout = processed.workout;
+  if (!workout || !workout.exercises || workout.exercises.length === 0) { alert('Sem treino para este dia!'); return; }
+  if (exDay === 'Domingo') { alert('Domingo é descanso! 😴'); return; }
+
+  wmState = {active:true, person:person, px:px, exIdx:0, setIdx:0, timer:null, startTime:Date.now(), totalSets:0, doneSets:0, exercises:workout.exercises, title:workout.title, focus:workout.focus||'', time:workout.time||'', currentSubIdx:0, subSteps:[], timedSubs:[]};
+  workout.exercises.forEach(function(ex){
+    const sm = (ex.sets||'1').match(/(\d+)/);
+    wmState.totalSets += sm ? parseInt(sm[1],10) : 1;
+  });
+
+  if (wmAudioCtx && wmAudioCtx.state === 'suspended') wmAudioCtx.resume();
+
+  const overlay = document.getElementById(px + '-wmOverlay');
+  overlay.classList.add('active');
+  document.getElementById(px + '-wmTitle').textContent = workout.title;
+  document.getElementById(px + '-wmSubtitle').textContent = (workout.focus||'') + ' · ' + (workout.time||'');
+  wmRenderEx();
+}
+
+function wmStartSubSteps(){
+  if(wmState.timer){ clearInterval(wmState.timer); wmState.timer = null; }
+  const btn = document.getElementById(wmState.px + '-wmStartSetBtn');
+  if (btn) btn.style.display = 'none';
+  if(!wmState.timedSubs || !wmState.timedSubs.length){ wmCompleteSet(); return; }
+  wmState.currentSubIdx = typeof wmState.currentSubIdx === 'number' ? wmState.currentSubIdx : 0;
+  wmRunNextSub();
+}
+
+function wmRunNextSub(){
+  const subs = wmState.timedSubs;
+  const px = wmState.px;
+  if(!subs || wmState.currentSubIdx >= subs.length){ wmCompleteSet(); return; }
+  const sub = subs[wmState.currentSubIdx];
+  let remaining = sub.secs;
+  const display = document.getElementById(px + '-wmTimerDisplay');
+  const label = document.getElementById(px + '-wmSubStepLabel');
+
+  document.querySelectorAll('[id^="' + px + '-wmStep_"]').forEach(function(el){
+    el.style.background = 'none'; el.style.padding = '3px 0'; el.style.borderRadius = '0'; el.style.margin = '0';
+  });
+  const stepEl = document.getElementById(px + '-wmStep_' + sub.idx);
+  if (stepEl) {
+    stepEl.style.background = 'rgba(99,102,241,.12)';
+    stepEl.style.borderRadius = '8px';
+    stepEl.style.padding = '6px 10px';
+    stepEl.style.margin = '0 -10px';
+    stepEl.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  if (label) label.innerHTML = '<strong>Etapa ' + (wmState.currentSubIdx+1) + '/' + subs.length + ':</strong> ' + sub.text;
+  if (display) { display.classList.remove('done'); display.textContent = fmtTime(remaining); }
+
+  wmState.timer = setInterval(function(){
+    remaining--;
+    if (display) display.textContent = fmtTime(Math.max(remaining,0));
+    if (remaining <= 3 && remaining > 0) wmBeep(660,.08);
+    if (remaining <= 0) {
+      clearInterval(wmState.timer); wmState.timer = null;
+      wmBeep(880,.12);
+      wmState.currentSubIdx++;
+      if (wmState.currentSubIdx < subs.length) {
+        setTimeout(wmRunNextSub, 250);
+      } else {
+        wmBeepDone();
+        if (display) { display.textContent = '✓'; display.classList.add('done'); }
+        setTimeout(function(){ wmCompleteSet(); }, 500);
+      }
+    }
+  }, 1000);
+}
+
+function wmSkipSubStep(){
+  if(wmState.timer){ clearInterval(wmState.timer); wmState.timer = null; }
+  if(!wmState.timedSubs || !wmState.timedSubs.length) return;
+  wmState.currentSubIdx = typeof wmState.currentSubIdx === 'number' ? wmState.currentSubIdx : 0;
+  wmState.currentSubIdx++;
+  if(wmState.currentSubIdx < wmState.timedSubs.length){
+    wmRunNextSub();
+  } else {
+    wmCompleteSet();
+  }
+}
+
+if(document.getElementById('app-rodrigo') && document.getElementById('app-rodrigo').classList.contains('active')){
+  // Preserve whichever app is open and refresh only if needed.
+}
+
 </script>
 </body>
 </html>
