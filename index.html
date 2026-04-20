@@ -2588,5 +2588,432 @@ if(document.getElementById('app-rodrigo') && document.getElementById('app-rodrig
 }
 
 </script>
+
+<script>
+// ================= V6 PATCH: dedupe same-day exercises + strict pre27 equipment hygiene =================
+(function(){
+  function patchSummary(plan, day, summary, focus){
+    if(!window.__PLAN_DISTRIBUTION || !__PLAN_DISTRIBUTION[plan] || !__PLAN_DISTRIBUTION[plan].pre27 || !__PLAN_DISTRIBUTION[plan].pre27[day]) return;
+    __PLAN_DISTRIBUTION[plan].pre27[day].summary = summary;
+    if(typeof focus === 'string') __PLAN_DISTRIBUTION[plan].pre27[day].focusNote = focus;
+  }
+
+  patchSummary('rodrigo','Segunda','Bike para aquecimento + estação MBX sentada para empurrar + super band como apoio de ombro. Antes de 27/04, sem banco regulável, halteres, kettlebells ou mini bands.','fase inicial usando a base antiga para acostumar articulações e ganhar constância antes da entrada dos pesos livres.');
+  patchSummary('rodrigo','Terça','Bike + estação MBX sentada nas puxadas e remadas + super band para postura. Antes de 27/04, sem banco regulável, halteres, kettlebells ou mini bands.','costas e bíceps priorizando máquina e elástico para consolidar técnica de puxar sem compensar o tronco.');
+  patchSummary('rodrigo','Quarta','Bike + step + estação MBX para pernas + caneleiras e peso corporal. Sem pesos livres novos nesta janela.','pernas e core na base antiga, com foco em estabilidade e mecânica.');
+  patchSummary('rodrigo','Quinta','Bike + estação MBX + super band, mantendo o treino complementar em cargas guiadas e controle postural.','upper complementar ainda com predominância de máquina e elástico.');
+  patchSummary('rodrigo','Sexta','Bike + estação MBX + step, usando circuito técnico e gasto calórico sem depender de pesos livres.','full body de transição, aumentando condicionamento sem perder padrão motor.');
+
+  patchSummary('marlene','Segunda','Bike confortável + tapete. Antes de 27/04, sem banco regulável, halteres, kettlebells ou mini bands.','cardio e mobilidade para construir tolerância ao movimento sem excesso de impacto.');
+  patchSummary('marlene','Terça','Super band + estação leve + tapete. O objetivo é postura, não fadiga alta.','braços e postura com controle fino e baixa agressividade articular.');
+  patchSummary('marlene','Quarta','Step + caneleiras 3kg + tapete, sem pressa e sem sobrecarga desnecessária.','pernas, glúteos e core ainda em versão suave e segura.');
+  patchSummary('marlene','Quinta','Estação MBX sentada + bike leve no aquecimento. Antes de 27/04, sem banco regulável, kettlebells ou halteres novos.','corpo inteiro leve, com predominância de máquina guiada.');
+  patchSummary('marlene','Sexta','Bike leve + tapete, priorizando circulação e relaxamento.','dia regenerativo para sustentar consistência semanal.');
+
+  patchSummary('ivo','Segunda','Bike + estação MBX sentada. Antes de 27/04, sem banco regulável, halteres, kettlebells ou mini bands.','corpo inteiro A com predominância de máquina e padrões básicos.');
+  patchSummary('ivo','Quarta','Step + caneleiras 3kg + peso corporal. O foco é estabilidade de pernas e quadril.','pernas e equilíbrio antes da expansão para pesos livres mais fortes.');
+  patchSummary('ivo','Sexta','Bike + estação MBX sentada + super band.','corpo inteiro B ainda priorizando segurança e ritmo.');
+
+  patchSummary('rafael','Segunda','Bike + estação MBX sentada/em pé + acessórios disponíveis antes de 27/04, priorizando controle e adaptação.','entrada gradual antes do bloco com mais pesos livres.');
+  patchSummary('rafael','Terça','Bike + estação MBX sentada + super band, consolidando padrão de puxar antes da sobrecarga maior.','costas e bíceps na base antiga, sem pressa para carga alta.');
+  patchSummary('rafael','Quarta','Bike + step + estação MBX e peso corporal, preparando joelhos e quadril para os blocos seguintes.','pernas com técnica primeiro, intensidade depois.');
+  patchSummary('rafael','Quinta','Estação + elásticos + trabalho corporal leve, usando o dia extra para aprender e não para competir.','upper complementar ainda protegido.');
+  patchSummary('rafael','Sexta','Bike + estação + step em circuito técnico, construindo capacidade de treino para as semanas seguintes.','full body de base antes da aceleração progressiva.');
+
+  const __exerciseTemplateV5 = exerciseTemplate;
+  const __futureEquipRx = /\b(banco regul[aá]vel|banco ajust[aá]vel|halter(?:es)?(?:\s*de)?\s*(?:3|5|7|10)kg|halter(?:es)?|kettlebell(?:\s*de)?\s*(?:6|8)kg|kettlebell|mini band(?:s)?)\b/ig;
+
+  function __cleanPre27TextLine(text){
+    return String(text||'')
+      .replace(/apoio no banco/ig,'apoio na parede ou em um apoio fixo')
+      .replace(/segure no banco ou na parede/ig,'segure na parede ou em um apoio fixo')
+      .replace(/mãos no banco/ig,'mãos na parede ou em um apoio fixo')
+      .replace(/ao lado do banco/ig,'ao lado da estação ou em espaço livre')
+      .replace(/sente no banco/ig,'sente em apoio firme e estável')
+      .replace(/use o banco como referência/ig,'use uma caixa baixa, o step ou a própria amplitude controlada como referência')
+      .replace(/prancha inclinada no banco/ig,'prancha inclinada na parede')
+      .replace(/banco regul[aá]vel|banco ajust[aá]vel/ig,'apoio firme')
+      .replace(/\bbanco\b/ig,'apoio firme')
+      .replace(/mini band(?:s)?/ig,'super band leve')
+      .replace(/halter(?:es)?(?:\s*de)?\s*(?:3|5|7|10)kg/ig,'resistência leve')
+      .replace(/halter(?:es)?/ig,'resistência leve')
+      .replace(/kettlebell(?:\s*de)?\s*(?:6|8)kg/ig,'peso corporal controlado')
+      .replace(/kettlebell/ig,'peso corporal controlado')
+      .replace(/\s{2,}/g,' ')
+      .replace(/\s+([,.;:])/g,'$1')
+      .trim();
+  }
+
+  function __dedupeAlias(name, idx){
+    if(name === 'Chest press sentado na estação'){
+      return ['Chest press sentado na estação','Pressão de peito com super band em pé','Peitoral em pé com super band','Pressão de peito unilateral com super band'][Math.min(idx,3)];
+    }
+    if(name === 'Remada baixa na estação'){
+      return ['Remada baixa na estação','Remada unilateral com super band','Puxada alta sentada na estação'][Math.min(idx,2)];
+    }
+    if(name === 'Rosca com super band'){
+      return ['Rosca com super band','Rosca alternada com super band','Rosca martelo com super band'][Math.min(idx,2)];
+    }
+    if(name === 'Desenvolvimento em pé com super band'){
+      return ['Desenvolvimento em pé com super band','Elevação lateral com super band'][Math.min(idx,1)];
+    }
+    return name;
+  }
+
+  function __pre27SpecificTemplate(ex, ctx){
+    const name = normalizeText(ex && ex.name || '');
+    if(name.indexOf('pressão de peito com super band em pé') >= 0 || name.indexOf('peitoral em pé com super band') >= 0 || name.indexOf('pressao de peito unilateral com super band') >= 0){
+      const unilateral = name.indexOf('unilateral') >= 0;
+      return {steps:[
+        unilateral ? 'Prenda a super band atrás do corpo em um ponto estável ou passe a band atrás das costas e segure uma ponta de cada vez, começando com um braço por série.' : 'Passe a super band atrás das costas ou fixe em ponto seguro na linha do peito e segure as pontas com as mãos na altura do esterno.',
+        'Afaste os pés na largura do quadril, destrave os joelhos e mantenha o abdômen firme para que o tronco não balance durante a empurrada.',
+        unilateral ? 'Empurre uma mão para a frente até quase estender o braço, sem deixar o ombro subir nem o tronco girar para o lado que está trabalhando.' : 'Empurre as mãos para a frente até quase estender os braços, sem bater as mãos e sem travar os cotovelos no final.',
+        'Segure 1 segundo na posição final sentindo peito e tríceps trabalharem, com pescoço longo e ombros longe das orelhas.',
+        'Volte em 2 a 3 segundos até a posição inicial, mantendo tensão constante no elástico e o peito aberto do começo ao fim.',
+        'Ao finalizar a série, solte a band devagar e reorganize a postura antes de repetir.'
+      ], tip:'Antes de 27/04, o peitoral fica melhor distribuído entre estação e super band do que repetindo o mesmo press várias vezes.'};
+    }
+    if(name.indexOf('elevação lateral com super band') >= 0){
+      return {steps:[
+        'Pise no meio da super band com um ou dois pés e segure as extremidades com os braços ao lado do corpo e cotovelos levemente flexionados.',
+        'Fique alto, com peito aberto, abdômen firme e ombros apontando para baixo, como se quisesse afastá-los das orelhas.',
+        'Abra os braços para os lados até perto da linha dos ombros, sem ultrapassar muito essa altura e sem inclinar o tronco.',
+        'Pense em conduzir o movimento pelos cotovelos, mantendo as mãos acompanhando naturalmente, sem virar o punho para trás.',
+        'Desça em 2 a 3 segundos controlando a volta da band e sem deixar a tensão desaparecer de uma vez.',
+        'Se o pescoço encurtar ou o corpo balançar, reduza a amplitude ou alivie a tensão do elástico.'
+      ], tip:'Essa variação evita repetir o mesmo press de ombro e distribui melhor o estímulo lateral.'};
+    }
+    if(name.indexOf('remada unilateral com super band') >= 0){
+      return {steps:[
+        'Prenda a super band em ponto seguro na frente do corpo, na altura do umbigo, e segure uma ponta com a mão que vai trabalhar.',
+        'Dê um pequeno passo para trás para criar tensão inicial, mantendo peito aberto, joelhos soltos e a outra mão apoiada na cintura ou em apoio fixo.',
+        'Puxe o cotovelo para trás e levemente para perto do quadril, como se quisesse guardar o braço no bolso de trás da calça.',
+        'Segure 1 segundo no final da puxada, aproximando a escápula sem rodar o tronco nem projetar a cabeça para a frente.',
+        'Volte em 2 a 3 segundos até o braço quase estender, sem perder a postura alta e sem deixar o elástico arrancar o ombro para frente.',
+        'Complete todas as repetições de um lado antes de trocar para o outro, comparando os dois lados com calma.'
+      ], tip:'A remada unilateral com super band substitui melhor a segunda remada igual do que repetir a mesma máquina no mesmo dia.'};
+    }
+    if(name.indexOf('rosca alternada com super band') >= 0){
+      return {steps:[
+        'Pise no centro da super band com os dois pés e segure uma ponta em cada mão, com braços ao lado do corpo e abdômen firme.',
+        'Mantenha os cotovelos próximos às costelas e suba um braço por vez, girando a palma da mão para cima conforme o movimento acontece.',
+        'Pare quando a mão estiver próxima do ombro, sem esmagar o punho nem deixar o cotovelo avançar demais para frente.',
+        'Desça em 2 a 3 segundos até quase estender o braço por completo, mantendo o tronco parado e os ombros baixos.',
+        'Alterne os lados até completar a série toda, respirando sem prender o ar e sem usar balanço do quadril.',
+        'Se a band estiver pesada demais, aproxime mais as mãos do ponto central para reduzir a tensão.'
+      ], tip:'Alternar os lados ajuda a manter técnica melhor quando o braço já está cansando.'};
+    }
+    if(name.indexOf('rosca martelo com super band') >= 0){
+      return {steps:[
+        'Pise no centro da super band com os pés firmes no chão e segure as pontas com palmas voltadas uma para a outra.',
+        'Mantenha os cotovelos próximos ao tronco e comece com os braços quase estendidos, sem travar os cotovelos.',
+        'Flexione os cotovelos levando as mãos para cima em linha reta, sem girar a palma e sem deixar o tronco ajudar.',
+        'Suba até o antebraço ficar próximo do bíceps e faça uma pequena pausa de controle na parte alta.',
+        'Desça em 2 a 3 segundos mantendo o punho neutro e os ombros relaxados, como se o pescoço quisesse ficar mais longo.',
+        'Ao terminar a série, solte a band com cuidado e recomece só quando os cotovelos voltarem a ficar estáveis.'
+      ], tip:'A pegada martelo entra para variar o estímulo e evitar duas roscas idênticas seguidas.'};
+    }
+    if(name.indexOf('face pull com super band') >= 0){
+      return {steps:[
+        'Prenda a super band em um ponto seguro na altura do rosto e segure as pontas com as mãos na largura dos ombros.',
+        'Dê um passo para trás para criar tensão e fique com peito aberto, joelhos destravados e abdômen levemente contraído.',
+        'Puxe as mãos em direção ao rosto abrindo os cotovelos para os lados, como se quisesse levar as mãos perto das orelhas.',
+        'No final do movimento, aproxime as escápulas e mantenha os ombros para baixo, sem subir o trapézio.',
+        'Volte devagar até os braços quase estenderem, mantendo o elástico sob controle e o pescoço solto.',
+        'Se sentir mais pescoço do que costas e ombros, reduza a tensão e repita mais limpo.'
+      ], tip:'Esse padrão corrige postura do ombro sem depender de mini band antes da janela nova.'};
+    }
+    if(name.indexOf('ponte de glúteos no tapete') >= 0){
+      return {steps:[
+        'Deite no tapete com joelhos dobrados, pés totalmente apoiados no chão e braços relaxados ao lado do corpo.',
+        'Ajuste os pés para que, no topo do movimento, as canelas fiquem próximas de uma linha vertical sem precisar levantar os calcanhares.',
+        'Contraia levemente o abdômen, pressione os pés no chão e eleve o quadril até formar uma linha aproximada entre joelhos, quadris e ombros.',
+        'Segure 1 segundo no topo apertando os glúteos, sem exagerar na curvatura da lombar e sem jogar a barriga para cima.',
+        'Desça em 2 a 3 segundos vértebra por vértebra até tocar o chão com controle, mantendo os joelhos alinhados com os pés.',
+        'Reinicie a repetição somente depois de estabilizar novamente a pelve e a respiração.'
+      ], tip:'Na janela anterior, a ponte fica no peso corporal e na técnica. Não precisa de mini band para funcionar bem.'};
+    }
+    if(name.indexOf('abdução lateral com caneleira') >= 0){
+      return {steps:[
+        'Coloque a caneleira de 3kg e escolha a posição mais estável: de lado no tapete ou em pé com uma mão apoiada na parede.',
+        'Mantenha a perna de base levemente flexionada e o tronco alinhado, sem deitar o corpo para compensar a perna que sobe.',
+        'Eleve a perna trabalhada para o lado até a amplitude em que o quadril continue estável e o pé permaneça aproximadamente apontado para a frente.',
+        'Segure 1 segundo no ponto alto sentindo glúteo médio e lateral do quadril, sem virar a ponta do pé para cima de propósito.',
+        'Desça em 2 a 3 segundos até quase encostar a perna de novo, mantendo a tensão e o controle.',
+        'Complete um lado inteiro antes de trocar, comparando os dois lados sem pressa.'
+      ], tip:'Use a caneleira e o controle do tronco; não há necessidade de mini band nesta fase.'};
+    }
+    if(name.indexOf('agachamento livre controlado') >= 0){
+      return {steps:[
+        'Fique em pé com pés na largura dos ombros ou um pouco mais abertos, pontas levemente para fora e braços soltos à frente do corpo.',
+        'Antes de descer, encha o tronco de ar, contraia levemente o abdômen e distribua o peso entre calcanhar, base do dedão e base do dedo mínimo.',
+        'Sente o quadril para trás e para baixo como se fosse alcançar uma caixa baixa imaginária, mantendo o peito aberto e a coluna neutra.',
+        'Desça apenas até o ponto em que joelhos, quadris e lombar continuem alinhados, sem deixar os joelhos fecharem para dentro.',
+        'Empurre o chão para subir, estendendo quadris e joelhos juntos, sem dar tranco e sem jogar o tronco para a frente.',
+        'Entre uma repetição e outra, pare um instante no topo para reorganizar a postura e repetir igual.'
+      ], tip:'Quando o plano ainda está na janela antiga, o agachamento livre controlado vale mais do que tentar inventar carga cedo demais.'};
+    }
+    if(name.indexOf('marcha estacionária com postura') >= 0){
+      return {steps:[
+        'Fique em pé com postura alta, peito aberto e braços ao lado do corpo como se estivesse segurando malas imaginárias.',
+        'Ative abdômen e glúteos de leve para manter a coluna estável enquanto alterna a elevação dos joelhos.',
+        'Suba um joelho por vez até uma altura confortável, sem inclinar o tronco para trás e sem deixar os ombros subirem.',
+        'Coordene o movimento com passos cadenciados e respiração regular, como se estivesse marchando sem pressa no mesmo lugar.',
+        'Mantenha as mãos firmes e a cabeça neutra, olhando para a frente o tempo todo.',
+        'Ao terminar, reduza a velocidade gradualmente e relaxe os ombros antes de seguir.'
+      ], tip:'Aqui o objetivo é postura e resistência leve, não intensidade máxima.'};
+    }
+    if(name.indexOf('dead bug no tapete') >= 0){
+      return {steps:[
+        'Deite no tapete de barriga para cima, flexione quadris e joelhos a 90 graus e eleve os braços apontando para o teto.',
+        'Pressione suavemente a lombar contra o chão antes de iniciar, como se quisesse reduzir o espaço entre costas e tapete.',
+        'Estenda devagar uma perna e o braço oposto ao mesmo tempo, só até o ponto em que a lombar consiga continuar estável.',
+        'Pare por 1 segundo no final da alavanca sem prender a respiração, depois retorne em 2 a 3 segundos para a posição inicial.',
+        'Alterne os lados mantendo o movimento lento, silencioso e com o pescoço relaxado no chão.',
+        'Se a lombar descolar, encurte a amplitude e retome o controle antes de continuar.'
+      ], tip:'O dead bug substitui melhor a prancha apoiada em banco quando o banco ainda não deve entrar no treino.'};
+    }
+    return null;
+  }
+
+  exerciseTemplate = function(ex, ctx){
+    if(ctx && ctx.mode === 'pre27'){
+      const custom = __pre27SpecificTemplate(ex, ctx);
+      if(custom) return custom;
+      const base = __exerciseTemplateV5(ex, ctx);
+      return {
+        steps:(base.steps||[]).map(__cleanPre27TextLine),
+        tip:__cleanPre27TextLine(base.tip || (ex && ex.tip) || '')
+      };
+    }
+    return __exerciseTemplateV5(ex, ctx);
+  };
+
+  const __getProcessedWorkoutV5 = getProcessedWorkout;
+  getProcessedWorkout = function(person, workout, ctx){
+    const res = __getProcessedWorkoutV5(person, workout, ctx);
+    if(!res || !res.workout) return res;
+    const mode = (res.window && res.window.mode) || 'combo27';
+    const seen = Object.create(null);
+
+    res.workout.exercises = (res.workout.exercises || []).map(function(ex){
+      const out = cloneObj(ex || {});
+      const currentName = String(out.name || '');
+      const count = seen[currentName] || 0;
+      seen[currentName] = count + 1;
+
+      if(count > 0){
+        out.name = __dedupeAlias(currentName, count);
+        const tpl = exerciseTemplate(out, {person:person, mode:mode, day:(ctx&&ctx.day)||'', phase:(ctx&&ctx.phase)||1});
+        out.steps = tpl.steps || out.steps;
+        out.tip = tpl.tip || out.tip;
+      }
+
+      if(mode === 'pre27'){
+        out.name = __cleanPre27TextLine(out.name)
+          .replace(/^Aquecimento ativo com super band leve$/i,'Aquecimento na bike')
+          .replace(/^Mini band pull-apart$/i,'Face pull com super band');
+        out.steps = (out.steps || []).map(__cleanPre27TextLine);
+        out.tip = __cleanPre27TextLine(out.tip || '');
+      }
+      return out;
+    });
+
+    if(mode === 'pre27'){
+      res.workout.equip = __cleanPre27TextLine(res.workout.equip || '');
+      res.workout.focus = __cleanPre27TextLine(res.workout.focus || '');
+    }
+    return res;
+  };
+})();
+</script>
+
+
+<script>
+// ================= V7 PATCH: strict pre27 equipment hygiene + semantic dedupe =================
+(function(){
+  const __v6Transform = transformExerciseByWindow;
+  const __v6GetProcessed = getProcessedWorkout;
+  const __v6LoadGuide = loadGuide;
+
+  function __cleanPre27Strict(text){
+    return String(text || '')
+      .replace(/\bmini band(?:s)?\b/ig,'super band leve')
+      .replace(/\bbanco regul[aá]vel\b|\bbanco ajust[aá]vel\b/ig,'apoio estável')
+      .replace(/\bbanco\b/ig,'apoio estável')
+      .replace(/\bkettlebell(?:s)?(?:\s*de)?\s*(?:6|8)?\s*kg\b/ig,'peso corporal controlado')
+      .replace(/\bkettlebell(?:s)?\b/ig,'peso corporal controlado')
+      .replace(/\bhalter(?:es)?(?:\s*de)?\s*(?:3|5|7|10)?\s*kg\b/ig,'resistência leve')
+      .replace(/\bhalter(?:es)?\b/ig,'resistência leve')
+      .replace(/\s{2,}/g,' ')
+      .replace(/\s+([,.;:])/g,'$1')
+      .trim();
+  }
+
+  function __patchPre27Summary(plan, day, summary, focus){
+    if(!window.__PLAN_DISTRIBUTION || !__PLAN_DISTRIBUTION[plan] || !__PLAN_DISTRIBUTION[plan].pre27 || !__PLAN_DISTRIBUTION[plan].pre27[day]) return;
+    __PLAN_DISTRIBUTION[plan].pre27[day].summary = summary;
+    if(typeof focus === 'string') __PLAN_DISTRIBUTION[plan].pre27[day].focusNote = focus;
+  }
+
+  __patchPre27Summary('rodrigo','Segunda','Bike para aquecimento + estação MBX sentada para empurrar + super band como apoio de ombro.','fase inicial usando a base antiga para acostumar articulações e ganhar constância antes da entrada dos pesos livres.');
+  __patchPre27Summary('rodrigo','Terça','Bike + estação MBX sentada nas puxadas e remadas + super band para postura.','costas e bíceps priorizando máquina e elástico para consolidar técnica de puxar sem compensar o tronco.');
+  __patchPre27Summary('rodrigo','Quarta','Bike + step + estação MBX para pernas + caneleiras e peso corporal.','pernas e core na base antiga, com foco em estabilidade e mecânica.');
+  __patchPre27Summary('rodrigo','Quinta','Bike + estação MBX + super band, mantendo o treino complementar em cargas guiadas e controle postural.','upper complementar ainda com predominância de máquina e elástico.');
+  __patchPre27Summary('rodrigo','Sexta','Bike + estação MBX + step, usando circuito técnico e gasto calórico sem depender de pesos livres.','full body de transição, aumentando condicionamento sem perder padrão motor.');
+
+  __patchPre27Summary('marlene','Segunda','Bike confortável + tapete + mobilidade guiada.','cardio e mobilidade para construir tolerância ao movimento sem excesso de impacto.');
+  __patchPre27Summary('marlene','Terça','Super band leve + estação leve + tapete.','braços e postura com controle fino e baixa agressividade articular.');
+  __patchPre27Summary('marlene','Quarta','Step + caneleiras 3kg + tapete, sem pressa e sem sobrecarga desnecessária.','pernas, glúteos e core ainda em versão suave e segura.');
+  __patchPre27Summary('marlene','Quinta','Estação MBX sentada + bike leve no aquecimento.','corpo inteiro leve, com predominância de máquina guiada.');
+  __patchPre27Summary('marlene','Sexta','Bike leve + tapete, priorizando circulação e relaxamento.','dia regenerativo para sustentar consistência semanal.');
+
+  __patchPre27Summary('ivo','Segunda','Bike + estação MBX sentada.','corpo inteiro A com predominância de máquina e padrões básicos.');
+  __patchPre27Summary('ivo','Quarta','Step + caneleiras 3kg + peso corporal.','pernas e equilíbrio antes da expansão para pesos livres mais fortes.');
+  __patchPre27Summary('ivo','Sexta','Bike + estação MBX sentada + super band.','corpo inteiro B ainda priorizando segurança e ritmo.');
+
+  __patchPre27Summary('rafael','Segunda','Bike + estação MBX sentada/em pé + acessórios já disponíveis nesta fase, priorizando controle e adaptação.','entrada gradual antes do bloco com mais pesos livres.');
+  __patchPre27Summary('rafael','Terça','Bike + estação MBX sentada + super band, consolidando padrão de puxar antes da sobrecarga maior.','costas e bíceps na base antiga, sem pressa para carga alta.');
+  __patchPre27Summary('rafael','Quarta','Bike + step + estação MBX e peso corporal, preparando joelhos e quadril para os blocos seguintes.','pernas com técnica primeiro, intensidade depois.');
+  __patchPre27Summary('rafael','Quinta','Estação + elásticos + trabalho corporal leve, usando o dia extra para aprender e não para competir.','upper complementar ainda protegido.');
+  __patchPre27Summary('rafael','Sexta','Bike + estação + step em circuito técnico, construindo capacidade de treino para as semanas seguintes.','full body de base antes da aceleração progressiva.');
+
+  const __pre27Loads = {
+    rodrigo:{push:'carga leve a moderada na estação MBX que permita sobrar 2 repetições',press:'super band leve a média',row:'carga estável na estação, sem balançar o tronco',curl:'super band leve a média',hinge:'peso corporal ou apoio leve',squat:'peso corporal, step ou apoio controlado',tri:'polia leve a moderada da estação',core:'peso corporal'},
+    marlene:{push:'resistência mínima confortável na estação ou super band leve',press:'super band bem leve ou carga bem baixa',row:'resistência leve na estação ou super band suave',curl:'super band leve',hinge:'peso corporal e apoio',squat:'peso corporal',tri:'resistência leve',core:'peso corporal'},
+    ivo:{push:'carga leve a moderada na estação MBX',press:'super band leve',row:'estação com carga que não balance o tronco',curl:'super band leve a média',hinge:'peso corporal',squat:'peso corporal ou step',tri:'polia leve',core:'peso corporal'},
+    rafael:{push:'carga leve a moderada na estação, aprendendo a linha do movimento',press:'super band média',row:'estação com carga estável e limpa',curl:'super band média',hinge:'peso corporal controlado',squat:'step ou peso corporal',tri:'polia leve a moderada',core:'peso corporal'}
+  };
+
+  loadGuide = function(person, slot){
+    const ctx = window.__CURRENT_TEMPLATE_CTX || {};
+    if(ctx.windowMode === 'pre27'){
+      const p = __pre27Loads[person] || __pre27Loads.rodrigo;
+      return p[slot] || 'resistência leve e estável';
+    }
+    return __v6LoadGuide(person, slot);
+  };
+
+  transformExerciseByWindow = function(person, ex, ctx){
+    if(ctx && ctx.mode === 'pre27'){
+      const out = cloneObj(ex || {});
+      const name = normalizeText(out.name || '');
+      if(name.indexOf('aquecimento com mini band') >= 0 || name.indexOf('aquecimento ativo com mini band') >= 0){ out.name = 'Aquecimento na bike'; out.reps = '5-6 min'; }
+      else if(includesAny(name,['supino'])) out.name = 'Chest press sentado na estação';
+      else if(includesAny(name,['flexão inclinada','flexao inclinada','pressão de peito sentada com mini band','pressao de peito sentada com mini band','peitoral com mini band'])) out.name = 'Pressão de peito com super band em pé';
+      else if(includesAny(name,['crucifixo'])) out.name = 'Peitoral em pé com super band';
+      else if(includesAny(name,['desenvolvimento sentado','pressão de ombro sentada','pressao de ombro sentada','pressão de ombro','pressao de ombro'])) out.name = 'Desenvolvimento em pé com super band';
+      else if(includesAny(name,['elevação lateral','elevacao lateral'])) out.name = 'Elevação lateral com super band';
+      else if(includesAny(name,['tríceps acima da cabeça','triceps acima da cabeca'])) out.name = 'Tríceps na polia alta da estação';
+      else if(includesAny(name,['remada baixa sentada','remada baixa'])) out.name = 'Remada baixa na estação';
+      else if(includesAny(name,['remada unilateral','remada curvada'])) out.name = 'Remada unilateral com super band';
+      else if(includesAny(name,['rosca alternada'])) out.name = 'Rosca alternada com super band';
+      else if(includesAny(name,['rosca martelo'])) out.name = 'Rosca martelo com super band';
+      else if(includesAny(name,['rosca direta'])) out.name = 'Rosca com super band';
+      else if(includesAny(name,['agachamento goblet','sentar e levantar do banco'])) out.name = 'Agachamento livre controlado';
+      else if(includesAny(name,['hip thrust'])) out.name = 'Ponte de glúteos no tapete';
+      else if(includesAny(name,['abdução lateral com mini band'])) out.name = 'Abdução lateral com caneleira';
+      else if(includesAny(name,['prancha inclinada no banco'])) out.name = 'Dead bug no tapete';
+      else if(includesAny(name,['caminhada do fazendeiro'])) out.name = 'Marcha estacionária com postura';
+      else if(includesAny(name,['mini band pull-apart'])) out.name = 'Face pull com super band';
+
+      const tpl = exerciseTemplate(out, {person:person, mode:'pre27', day:ctx.day, phase:ctx.phase});
+      out.steps = (tpl.steps || out.steps || []).map(__cleanPre27Strict);
+      out.tip = __cleanPre27Strict(tpl.tip || out.tip || '');
+      out.name = __cleanPre27Strict(out.name);
+      return out;
+    }
+    return __v6Transform(person, ex, ctx);
+  };
+
+  function __pre27Alias(name, idx){
+    const map = {
+      'Chest press sentado na estação':['Chest press sentado na estação','Pressão de peito com super band em pé','Peitoral em pé com super band','Flexão inclinada na parede'],
+      'Desenvolvimento em pé com super band':['Desenvolvimento em pé com super band','Elevação lateral com super band','Pressão frontal com super band'],
+      'Remada baixa na estação':['Remada baixa na estação','Remada unilateral com super band','Puxada alta sentada na estação'],
+      'Rosca com super band':['Rosca com super band','Rosca alternada com super band','Rosca martelo com super band']
+    };
+    const arr = map[name];
+    if(!arr) return name;
+    return arr[Math.min(idx, arr.length - 1)] || name;
+  }
+
+  getProcessedWorkout = function(person, workout, ctx){
+    const res = __v6GetProcessed(person, workout, ctx);
+    if(!res || !res.workout) return res;
+    if(res.window && res.window.mode === 'pre27'){
+      res.workout.title = __cleanPre27Strict(res.workout.title || '');
+      res.workout.equip = __cleanPre27Strict(res.workout.equip || '');
+      res.workout.focus = __cleanPre27Strict(res.workout.focus || '');
+      const seen = Object.create(null);
+      res.workout.exercises = (res.workout.exercises || []).map(function(ex){
+        const out = cloneObj(ex || {});
+        out.name = __cleanPre27Strict(out.name || '');
+        const idx = seen[out.name] || 0;
+        seen[out.name] = idx + 1;
+        if(idx > 0){
+          out.name = __pre27Alias(out.name, idx);
+          const tpl = exerciseTemplate(out, {person:person, mode:'pre27', day:(ctx && ctx.day) || '', phase:(ctx && ctx.phase) || 1});
+          if(tpl && tpl.steps) out.steps = tpl.steps;
+          if(tpl && tpl.tip) out.tip = tpl.tip;
+        }
+        out.name = __cleanPre27Strict(out.name || '');
+        out.steps = (out.steps || []).map(__cleanPre27Strict);
+        out.tip = __cleanPre27Strict(out.tip || '');
+        return out;
+      }).filter(function(ex, idx, arr){
+        return arr.findIndex(function(other){ return other.name === ex.name; }) === idx;
+      });
+    }
+    return res;
+  };
+})();
+</script>
+
+
+<script>
+// ================= V8 PATCH: explicit pre27 equipment summaries on render =================
+(function(){
+  const __v7GetProcessed = getProcessedWorkout;
+  const __safePre27Equip = {
+    rodrigo:{
+      'Segunda':'Bike para aquecimento + estação MBX sentada para empurrar + super band como apoio de ombro.',
+      'Terça':'Bike + estação MBX sentada nas puxadas e remadas + super band para postura.',
+      'Quarta':'Bike + step + estação MBX para pernas + caneleiras e peso corporal.',
+      'Quinta':'Bike + estação MBX + super band, mantendo o treino complementar em cargas guiadas e controle postural.',
+      'Sexta':'Bike + estação MBX + step, usando circuito técnico e gasto calórico sem depender de pesos livres.'
+    },
+    marlene:{
+      'Segunda':'Bike confortável + tapete + mobilidade guiada.',
+      'Terça':'Super band leve + estação leve + tapete.',
+      'Quarta':'Step + caneleiras 3kg + tapete, sem pressa e sem sobrecarga desnecessária.',
+      'Quinta':'Estação MBX sentada + bike leve no aquecimento.',
+      'Sexta':'Bike leve + tapete, priorizando circulação e relaxamento.'
+    },
+    ivo:{
+      'Segunda':'Bike + estação MBX sentada.',
+      'Quarta':'Step + caneleiras 3kg + peso corporal.',
+      'Sexta':'Bike + estação MBX sentada + super band.'
+    },
+    rafael:{
+      'Segunda':'Bike + estação MBX sentada/em pé + acessórios já disponíveis nesta fase, priorizando controle e adaptação.',
+      'Terça':'Bike + estação MBX sentada + super band, consolidando padrão de puxar antes da sobrecarga maior.',
+      'Quarta':'Bike + step + estação MBX e peso corporal, preparando joelhos e quadril para os blocos seguintes.',
+      'Quinta':'Estação + elásticos + trabalho corporal leve, usando o dia extra para aprender e não para competir.',
+      'Sexta':'Bike + estação + step em circuito técnico, construindo capacidade de treino para as semanas seguintes.'
+    }
+  };
+  getProcessedWorkout = function(person, workout, ctx){
+    const res = __v7GetProcessed(person, workout, ctx);
+    if(res && res.workout && res.window && res.window.mode === 'pre27'){
+      const day = (ctx && ctx.day) || '';
+      const safe = (__safePre27Equip[person] || {})[day];
+      if(safe) res.workout.equip = safe;
+    }
+    return res;
+  };
+})();
+</script>
+
 </body>
 </html>
