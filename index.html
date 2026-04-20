@@ -2340,6 +2340,249 @@ function wmSkipSubStep(){
   }
 }
 
+
+
+// ================= V5 PATCH: structured equipment distribution + mesocycle refinement =================
+let __CURRENT_TEMPLATE_CTX = null;
+const __PLAN_DISTRIBUTION = {
+  rodrigo:{
+    pre27:{
+      'Segunda':{summary:'Bike para aquecimento + estação MBX sentada para empurrar + super band como apoio de ombro. Sem banco/halteres/mini bands antes de 27/04.',focusNote:'fase inicial usando a base antiga para acostumar articulações e ganhar constância antes da entrada dos pesos livres.'},
+      'Terça':{summary:'Bike + estação MBX sentada nas puxadas e remadas + super band para postura. Antes de 27/04, nada de banco regulável, halteres ou kettlebells.',focusNote:'costas e bíceps priorizando máquina e elástico para consolidar técnica de puxar sem compensar o tronco.'},
+      'Quarta':{summary:'Bike + step + estação MBX para pernas + caneleiras e peso corporal. Sem pesos livres novos nesta janela.',focusNote:'pernas e core na base antiga, com foco em estabilidade e mecânica.'},
+      'Quinta':{summary:'Bike + estação MBX + super band, mantendo o treino complementar em cargas guiadas e controle postural.',focusNote:'upper complementar ainda com predominância de máquina e elástico.'},
+      'Sexta':{summary:'Bike + estação MBX + step, usando circuito técnico e gasto calórico sem depender de pesos livres.',focusNote:'full body de transição, aumentando condicionamento sem perder padrão motor.'}
+    },
+    post27:{
+      'Segunda':{summary:'Base do dia: banco regulável + halteres 5/7/10kg no peitoral e ombros. Complemento: estação MBX sentada no chest press e tríceps. Mini band só para ativação e saúde do ombro.',focusNote:'empurrar pesado com pesos livres como base e estação apenas como complemento guiado.',firstCue:'o movimento principal deve nascer no banco com halteres; a estação entra depois para completar volume sem bagunçar a técnica.'},
+      'Terça':{summary:'Base do dia: estação MBX sentada nas puxadas principais. Complemento: banco regulável + halteres 7/10kg na remada unilateral. Super band e mini band ficam para postura e manguito.',focusNote:'puxar começa na máquina para dorsal e termina nos pesos livres para estabilidade unilateral.',firstCue:'o primeiro bloco do dia é de costas na estação; os halteres entram depois para equilibrar lado direito e esquerdo.'},
+      'Quarta':{summary:'Base do dia: step + estação MBX em extensora/flexora + kettlebell 6/8kg no agachamento. Complemento: halteres 5/7/10kg no romeno e mini band para glúteo.',focusNote:'pernas distribuídas entre máquina, step e carga livre, sem concentrar tudo em um único implemento.',firstCue:'na parte de pernas, cada equipamento cumpre uma função: estação para isolar, step para controle e kettlebell/halter para padrão global.'},
+      'Quinta':{summary:'Base do dia: banco regulável + halteres no upper complementar. Complemento: estação MBX só em acessórios escolhidos. Mini band preserva ombro e escápula.',focusNote:'upper extra com volume de pesos livres, mas sem repetir exatamente a lógica da segunda-feira.',firstCue:'quinta não é cópia da segunda: o banco continua importante, mas o volume é mais localizado e com descansos menores.'},
+      'Sexta':{summary:'Base do dia: bike + circuito misto com estação, banco, halteres e kettlebell. Cada rodada alterna máquina e pesos livres para manter gasto calórico e qualidade.',focusNote:'full body metabólico, porém ainda técnico, com alternância intencional entre implementos.',firstCue:'sexta mistura equipamentos para acelerar a sessão sem transformar o treino em bagunça.'},
+      'Sábado':{summary:'Bike leve + mini bands + mobilidade. Kettlebell e halteres entram só em blocos curtos de técnica se o corpo estiver recuperado.',focusNote:'dia opcional de recuperação ativa e técnica, não de carga alta.'}
+    }
+  },
+  marlene:{
+    pre27:{
+      'Segunda':{summary:'Bike confortável + tapete + banco apenas como apoio. Nada de pesos livres novos antes de 27/04.',focusNote:'cardio e mobilidade para construir tolerância ao movimento sem excesso de impacto.'},
+      'Terça':{summary:'Banco + super band + mini band e, quando previsto, halter leve já existente. O objetivo é postura, não fadiga alta.',focusNote:'braços e postura com controle fino e baixa agressividade articular.'},
+      'Quarta':{summary:'Banco + step + caneleiras 3kg + mini band, sem pressa e sem sobrecarga desnecessária.',focusNote:'pernas, glúteos e core ainda em versão suave e segura.'},
+      'Quinta':{summary:'Estação MBX sentada + banco como apoio e bike leve no aquecimento. Antes de 27/04, sem usar o banco regulável novo, kettlebells ou pares 5/7/10kg.',focusNote:'corpo inteiro leve, com predominância de máquina guiada.'},
+      'Sexta':{summary:'Bike leve + tapete + mobilidade, priorizando circulação e relaxamento.',focusNote:'dia regenerativo para sustentar consistência semanal.'}
+    },
+    post27:{
+      'Segunda':{summary:'Bike confortável continua como base do dia. Banco regulável entra apenas como apoio de mobilidade e postura; mini bands podem ativar quadril e escápula. Halteres/kettlebells não são prioridade nesta sessão.',focusNote:'segunda segue regenerativa mesmo depois da entrada dos novos equipamentos.'},
+      'Terça':{summary:'Base do dia: banco regulável para suporte + mini bands. Halter de 5kg vira a carga padrão; 7kg só pode aparecer em remadas ou pegadas bilaterais nas fases finais se a técnica permanecer limpa. Halter de 10kg não entra como rotina neste plano.',focusNote:'força leve de braços e postura com banco e mini band como eixo principal, e halteres usados com prudência clínica.',firstCue:'neste plano, o ganho vem da repetição técnica e da constância; a carga sobe só quando o corpo responder bem.'},
+      'Quarta':{summary:'Base do dia: banco + step + mini band + caneleiras 3kg. Kettlebell de 6kg pode entrar apenas em fases avançadas e em exercícios de sentar/levantar ou ponte, se joelhos, quadril e lombar estiverem estáveis. Kettlebell de 8kg não é prioridade.',focusNote:'pernas e glúteos com progressão muito seletiva de carga, respeitando as limitações já descritas no plano.',firstCue:'a prioridade continua sendo estabilidade e segurança; o kettlebell aparece como ferramenta opcional, não como obrigação.'},
+      'Quinta':{summary:'Base do dia: estação MBX sentada nas puxadas, remadas e extensora. Complemento: banco regulável e halter de 5kg em exercícios sentados; 7kg só em remada unilateral ou padrão de quadril se a fase estiver avançada e a execução estiver estável. Mini bands entram como ativação.',focusNote:'máquina guiada continua predominando, enquanto os equipamentos novos entram de forma controlada e funcional.',firstCue:'para este plano, a estação ainda manda no dia de corpo inteiro; os pesos livres entram como complemento e não como centro da sessão.'},
+      'Sexta':{summary:'Bike leve + banco + tapete + mini band. Halteres e kettlebells não são prioridade na sexta, que segue voltada à circulação e ao relaxamento.',focusNote:'fechamento da semana preservando recuperação e adesão.'}
+    }
+  },
+  ivo:{
+    pre27:{
+      'Segunda':{summary:'Bike + estação MBX sentada + banco simples como apoio funcional. Antes de 27/04, sem banco regulável novo nem kettlebells.',focusNote:'corpo inteiro A com predominância de máquina e padrões básicos.'},
+      'Quarta':{summary:'Step + caneleiras 3kg + mini band + peso corporal. O foco é estabilidade de pernas e quadril.',focusNote:'pernas e equilíbrio antes da expansão para pesos livres mais fortes.'},
+      'Sexta':{summary:'Bike + estação MBX sentada + super band, com halteres leves antigos se já previstos no bloco.',focusNote:'corpo inteiro B ainda priorizando segurança e ritmo.'}
+    },
+    post27:{
+      'Segunda':{summary:'Base do dia: estação MBX sentada nas puxadas + banco regulável com halteres 5/7kg no empurrar. Step e mini band entram apenas se ajudarem estabilidade. Halter de 10kg fica reservado para fases finais e apenas em remadas ou padrões de quadril muito estáveis.',focusNote:'segunda combina máquina e pesos livres para saúde + força, mas sem pressa para as cargas mais altas.',firstCue:'o treino começa guiado e termina mais livre: primeiro organizar o padrão, depois desafiar a estabilidade.'},
+      'Quarta':{summary:'Base do dia: banco + step + mini band. Kettlebell de 6kg entra antes do de 8kg; a estação MBX pode complementar extensora/flexora quando o bloco pedir. Halteres 5/7kg aparecem no romeno ou no apoio de marcha, e 10kg só bem adiante.',focusNote:'pernas e estabilidade com progressão clara do apoio externo para a força funcional.',firstCue:'neste dia, a ordem importa: primeiro controlar o corpo, depois aumentar a carga.'},
+      'Sexta':{summary:'Base do dia: estação MBX + banco regulável + halteres 5/7kg. Bike continua no aquecimento e no condicionamento. Halter de 10kg pode aparecer no farmer carry ou na remada das fases finais, se não houver perda de postura.',focusNote:'corpo inteiro B fecha a semana reforçando postura, pegada e resistência geral.',firstCue:'na sexta, o objetivo é sair sentindo o corpo inteiro trabalhar sem destruir as articulações.'}
+    }
+  },
+  rafael:{
+    pre27:{
+      'Segunda':{summary:'Bike + estação MBX sentada/em pé + acessórios disponíveis antes de 27/04, priorizando controle e adaptação.',focusNote:'entrada gradual antes do bloco com mais pesos livres.'},
+      'Terça':{summary:'Bike + estação MBX sentada + super band, consolidando padrão de puxar antes da sobrecarga maior.',focusNote:'costas e bíceps na base antiga, sem pressa para carga alta.'},
+      'Quarta':{summary:'Bike + step + estação MBX e peso corporal, preparando joelhos e quadril para os blocos seguintes.',focusNote:'pernas com técnica primeiro, intensidade depois.'},
+      'Quinta':{summary:'Estação + elásticos + trabalho corporal leve, usando o dia extra para aprender e não para competir.',focusNote:'upper complementar ainda protegido.'},
+      'Sexta':{summary:'Bike + estação + step em circuito técnico, construindo capacidade de treino para as semanas seguintes.',focusNote:'full body de base antes da aceleração progressiva.'}
+    },
+    post27:{
+      'Segunda':{summary:'Base do dia: banco regulável + halteres 5/7/10kg no peitoral e ombros. Complemento: estação MBX sentada/em pé no chest press e tríceps. Mini band entra no aquecimento e na saúde escapular.',focusNote:'empurrar para hipertrofia com pesos livres como base e máquina como finalização organizada.',firstCue:'as séries mais importantes do dia devem acontecer no banco com halteres; a estação vem depois para somar volume sem precisar roubar.'},
+      'Terça':{summary:'Base do dia: estação MBX nas puxadas e remadas principais. Complemento: banco regulável + halteres 7/10kg na remada unilateral e super band no face pull. O halter de 10kg entra mais cedo aqui do que nos outros planos, mas sempre sem giro de tronco.',focusNote:'costas e bíceps usando a máquina para carga estável e o banco para força unilateral.',firstCue:'no dia de puxar, primeiro construir dorsal na máquina e só depois cobrar estabilidade do tronco com os halteres.'},
+      'Quarta':{summary:'Base do dia: kettlebell 6/8kg + step + estação MBX em extensora/flexora. Complemento: banco regulável e halteres 7/10kg no romeno e no suporte de core. Kettlebell de 8kg vira a principal peça de agachamento assim que a fase permitir.',focusNote:'pernas com mistura de base atlética, hipertrofia guiada e controle de tronco.',firstCue:'na quarta, cada implemento tem um papel: kettlebell para padrão global, estação para isolar e step para coordenação.'},
+      'Quinta':{summary:'Base do dia: banco regulável + halteres no upper extra. Mini band protege ombro; estação MBX entra só onde fizer sentido como voador ou tríceps. O objetivo não é repetir a segunda, e sim completar volume de forma inteligente.',focusNote:'upper complementar com ênfase em deltoides, braços e peitoral superior.',firstCue:'quinta serve para lapidar pontos fortes e fracos, não para testar ego.'},
+      'Sexta':{summary:'Base do dia: bike + circuito com estação, banco, halteres e kettlebell. O treino alterna implementos para manter condicionamento e hipertrofia sem sobrecarga máxima. Halteres de 10kg entram se o corpo ainda estiver estável ao final da semana.',focusNote:'full body de densidade, com muita organização e zero pressa em buscar falha total.',firstCue:'na sexta, variedade de equipamento é estratégia de treino, não confusão.'},
+      'Sábado':{summary:'Bike leve, mini band, mobilidade e técnica de movimentos. Kettlebell e halteres só entram para ensaio de padrão ou braço leve, jamais para “compensar” a semana.',focusNote:'dia opcional de técnica e recuperação, protegendo crescimento e aderência.'}
+    }
+  }
+};
+
+function __getPlanDistribution(person, ctx, windowInfo){
+  const source = __PLAN_DISTRIBUTION[person] || __PLAN_DISTRIBUTION.rodrigo;
+  const bucket = (windowInfo && windowInfo.mode === 'pre27') ? source.pre27 : source.post27;
+  return cloneObj((bucket && bucket[ctx.day]) || {summary:(windowInfo&&windowInfo.summary)||'',focusNote:'',firstCue:''});
+}
+
+function __getLoadSpec(person, slot, ctx){
+  const p = person || 'rodrigo';
+  const phase = Math.max(1, Math.min(4, (ctx && ctx.phase) || 1));
+  const windowMode = (ctx && ctx.windowMode) || 'combo27';
+  if(windowMode === 'pre27'){
+    const legacy = {
+      rodrigo:{push:'uma carga leve a moderada na estação MBX que permita sobrar 2 repetições',press:'uma super band leve a média',row:'a primeira ou segunda placa confortável da estação',curl:'uma super band leve a média',hinge:'peso corporal ou apoio leve',squat:'peso corporal, step ou apoio controlado',tri:'polia leve a moderada da estação',core:'peso corporal'},
+      marlene:{push:'uma mini band leve ou resistência mínima confortável',press:'mini band leve ou carga bem baixa',row:'resistência leve na estação ou super band suave',curl:'super band leve',hinge:'peso corporal e apoio',squat:'peso corporal',tri:'resistência leve',core:'peso corporal'},
+      ivo:{push:'uma carga leve a moderada na estação MBX',press:'super band leve',row:'estação com carga que não balance o tronco',curl:'super band leve a média',hinge:'peso corporal',squat:'peso corporal ou step',tri:'polia leve',core:'peso corporal'},
+      rafael:{push:'uma carga leve a moderada na estação, aprendendo a linha do movimento',press:'super band média',row:'estação com carga estável e limpa',curl:'super band média',hinge:'peso corporal controlado',squat:'step ou peso corporal',tri:'polia leve a moderada',core:'peso corporal'}
+    };
+    return (legacy[p]||legacy.rodrigo)[slot] || 'resistência leve e estável';
+  }
+  const specs = {
+    rodrigo:{
+      push:['par de 5kg','par de 5kg ou 7kg','par de 7kg','par de 7kg, chegando aos 10kg apenas nas séries principais se o ombro continuar firme'],
+      press:['par de 5kg','par de 5kg','par de 5kg ou 7kg','par de 7kg nas séries centrais, recuando se a lombar arquear'],
+      row:['par de 7kg','7kg por mão','7kg por mão, testando 10kg só nas séries mais limpas','10kg por mão nas séries principais se o tronco não rodar'],
+      curl:['5kg por mão','5kg por mão','5kg ou 7kg por mão conforme controle','7kg só se o corpo ficar completamente parado'],
+      hinge:['kettlebell de 8kg ou par de 5kg','kettlebell de 8kg ou par de 7kg','par de 7kg ou par de 10kg apenas se a lombar ficar neutra','par de 10kg nas séries principais ou kettlebell de 8kg com pausa'],
+      squat:['kettlebell de 6kg ou 8kg','kettlebell de 8kg','kettlebell de 8kg ou par de 5kg','kettlebell de 8kg e, se fizer sentido no bloco, par de 5kg como front hold'],
+      tri:['um halter de 5kg com as duas mãos','um halter de 5kg ou 7kg','um halter de 7kg','um halter de 7kg, evitando 10kg acima da cabeça se perder controle'],
+      core:['peso corporal','peso corporal com alavanca maior','peso corporal com pausa','peso corporal com mais tempo de contração']
+    },
+    marlene:{
+      push:['mini band ou 1 halter de 5kg com as duas mãos','1 halter de 5kg com as duas mãos','1 halter de 5kg; 7kg só se o exercício estiver muito estável e sem desconforto','1 halter de 5kg e, pontualmente, 7kg em pegada muito segura; 10kg não entra como rotina'],
+      press:['mini band leve ou 1 halter de 5kg por vez','1 halter de 5kg por vez','1 halter de 5kg por vez','1 halter de 5kg por vez, mantendo o foco em postura e não em carga'],
+      row:['1 halter de 5kg por lado','1 halter de 5kg por lado','1 halter de 5kg ou 7kg em remadas muito estáveis','1 halter de 7kg apenas se tronco e ombro estiverem íntegros; caso contrário, manter 5kg'],
+      curl:['1 halter de 5kg, um braço por vez','1 halter de 5kg, um braço por vez','1 halter de 5kg, um braço por vez','1 halter de 5kg, sem pressa para subir carga'],
+      hinge:['peso corporal ou kettlebell de 6kg somente se estiver confortável','kettlebell de 6kg se o quadril estiver estável','kettlebell de 6kg em amplitude controlada','kettlebell de 6kg; 8kg não é prioridade neste plano'],
+      squat:['peso corporal, banco e step como base','peso corporal ou kettlebell de 6kg se a técnica estiver segura','kettlebell de 6kg apenas nas séries mais estáveis','kettlebell de 6kg como opção, sem obrigatoriedade'],
+      tri:['mini band ou 1 halter de 5kg com as duas mãos','1 halter de 5kg com as duas mãos','1 halter de 5kg com as duas mãos','1 halter de 5kg com foco em cotovelos estáveis'],
+      core:['peso corporal','peso corporal','peso corporal com pequenos tempos extras','peso corporal com controle respiratório']
+    },
+    ivo:{
+      push:['par de 5kg','par de 5kg','par de 5kg ou 7kg','par de 7kg nas séries principais se o movimento continuar limpo'],
+      press:['par de 5kg','par de 5kg','par de 5kg','par de 5kg ou 7kg se a lombar não sair do lugar'],
+      row:['1 halter de 7kg por lado','1 halter de 7kg por lado','1 halter de 7kg por lado, testando 10kg só em remadas muito firmes','1 halter de 10kg apenas nas séries principais se o tronco não balançar'],
+      curl:['5kg por mão','5kg por mão','5kg por mão','5kg ou 7kg por mão conforme estabilidade'],
+      hinge:['kettlebell de 6kg ou par de 5kg','kettlebell de 6kg ou par de 5kg','kettlebell de 8kg ou par de 7kg','kettlebell de 8kg ou halteres 7kg; 10kg só se a lombar seguir neutra'],
+      squat:['kettlebell de 6kg','kettlebell de 6kg ou 8kg','kettlebell de 8kg se joelhos e quadril estiverem estáveis','kettlebell de 8kg como padrão das séries principais'],
+      tri:['1 halter de 5kg com as duas mãos','1 halter de 5kg com as duas mãos','1 halter de 5kg ou 7kg','1 halter de 7kg se o braço subir e descer sem compensar'],
+      core:['peso corporal','peso corporal com pausas','peso corporal com alavanca maior','peso corporal com mais tempo sob tensão']
+    },
+    rafael:{
+      push:['par de 5kg ou 7kg','par de 7kg','par de 7kg, testando 10kg nas séries principais','par de 10kg nas séries principais se a execução continuar limpa'],
+      press:['par de 5kg','par de 5kg ou 7kg','par de 7kg','par de 7kg e, pontualmente, 10kg só se a lombar não mexer'],
+      row:['1 halter de 7kg por lado','1 halter de 7kg por lado','1 halter de 10kg por lado nas séries mais controladas','1 halter de 10kg por lado como principal, sem rodar o tronco'],
+      curl:['5kg ou 7kg por mão','7kg por mão','7kg por mão','7kg por mão e 10kg apenas em poucas séries se o corpo permanecer parado'],
+      hinge:['par de 7kg ou kettlebell de 8kg','par de 7kg ou 10kg','par de 10kg ou kettlebell de 8kg com pausa','par de 10kg nas séries principais ou kettlebell de 8kg em cadência lenta'],
+      squat:['kettlebell de 8kg','kettlebell de 8kg','kettlebell de 8kg ou par de 5kg como front hold','kettlebell de 8kg como base e halteres de 5kg se o bloco pedir mais densidade'],
+      tri:['1 halter de 5kg ou 7kg com as duas mãos','1 halter de 7kg','1 halter de 7kg','1 halter de 7kg e, se o exercício permitir, 10kg apenas com cotovelos estáveis'],
+      core:['peso corporal','peso corporal com mais tempo','peso corporal com alavanca maior','peso corporal com pausas e tempo extra']
+    }
+  };
+  const arr = ((specs[p]||specs.rodrigo)[slot]) || ['carga leve e estável'];
+  return arr[Math.min(phase-1, arr.length-1)] || arr[arr.length-1];
+}
+
+function loadGuide(person, slot){
+  return __getLoadSpec(person, slot, __CURRENT_TEMPLATE_CTX || {});
+}
+
+function __addPlanCue(ex, plan, idx){
+  const out = cloneObj(ex||{});
+  if(plan && plan.firstCue && idx===0){
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Distribuição do dia: ' + plan.firstCue;
+  }
+  return out;
+}
+
+function __shapeExerciseForPlan(person, ex, ctx, plan, windowInfo, idx){
+  let out = cloneObj(ex||{});
+  if(windowInfo.mode === 'pre27'){
+    out = transformExerciseByWindow(person, out, {mode:'pre27', day:ctx.day, phase:ctx.phase});
+    return __addPlanCue(out, plan, idx);
+  }
+  const tpl = exerciseTemplate(out, {person:person, mode:windowInfo.mode, day:ctx.day, phase:ctx.phase});
+  out.steps = tpl.steps;
+  out.tip = tpl.tip || out.tip;
+  return __addPlanCue(out, plan, idx);
+}
+
+function __cycleMeta(weekIndex){
+  const seq = [
+    {label:'Adaptação técnica', mode:'adapt'},
+    {label:'Volume progressivo', mode:'volume'},
+    {label:'Intensidade técnica', mode:'intensity'},
+    {label:'Deload ativo', mode:'deload'}
+  ];
+  return seq[Math.abs(weekIndex||0)%4];
+}
+
+function __weekVariantLabel(weekIndex){
+  return __cycleMeta(weekIndex).label;
+}
+
+function __mutateExerciseForWeek(ex, weekIndex, person, phase){
+  const out = cloneObj(ex||{});
+  const name = normalizeText(out.name);
+  if(name.indexOf('descanso')>=0 || name.indexOf('recuperação')>=0 || name.indexOf('volta à calma')>=0 || name.indexOf('alongamento')>=0 || name.indexOf('mobilidade')>=0 || name.indexOf('relaxamento')>=0) return out;
+  const meta = __cycleMeta(weekIndex).mode;
+  if(meta === 'adapt'){
+    if(out.rest && out.rest !== '-') out.rest = __adjustRestString(out.rest, phase===1 ? 5 : 0);
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Semana de adaptação: usar a primeira série para consolidar caminho, postura e ritmo.';
+  } else if(meta === 'volume'){
+    if(out.sets && out.sets !== '-' && __parseLeadingNum(out.sets) && __parseLeadingNum(out.sets) < 5) out.sets = __incSetsString(out.sets, 1, 5);
+    if(out.reps && out.reps !== '—') out.reps = __replaceRepRange(out.reps, 0, phase >= 3 ? 2 : 1);
+    if(out.rest && out.rest !== '-') out.rest = __adjustRestString(out.rest, -5);
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Semana de volume: aumentar trabalho sem correr as repetições.';
+  } else if(meta === 'intensity'){
+    if(out.rest && out.rest !== '-') out.rest = __adjustRestString(out.rest, 5);
+    if(out.reps && out.reps !== '—') out.reps = __replaceRepRange(out.reps, -1, 0);
+    if(name.indexOf('supino')>=0 || name.indexOf('remada')>=0 || name.indexOf('agachamento')>=0 || name.indexOf('romeno')>=0 || name.indexOf('desenvolvimento')>=0){
+      out.name = out.name.indexOf('pausa')>=0 ? out.name : (out.name + ' com pausa técnica de 1 segundo');
+    }
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Semana de intensidade técnica: descansar um pouco mais e tentar subir a carga apenas se a postura seguir limpa.';
+  } else if(meta === 'deload'){
+    if(out.sets && out.sets !== '-' && __parseLeadingNum(out.sets) && __parseLeadingNum(out.sets) > 2){
+      out.sets = __incSetsString(out.sets, -1, 99);
+    }
+    if(out.reps && out.reps !== '—') out.reps = __replaceRepRange(out.reps, -2, -1);
+    if(out.rest && out.rest !== '-') out.rest = __adjustRestString(out.rest, 10);
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Semana de deload ativo: reduzir um pouco o volume para chegar melhor no próximo microciclo.';
+  }
+  if(phase >= 3 && meta === 'intensity'){
+    out.tip = (out.tip ? out.tip + ' ' : '') + 'Fase avançada: priorizar carga só nas séries em que o padrão ficar igual ao aquecimento.';
+  }
+  return out;
+}
+
+function __applyWeekVariation(workout, weekIndex, person, phase){
+  const w = cloneObj(workout||{});
+  const label = __weekVariantLabel(weekIndex);
+  w.title = (w.title || 'Treino') + ' · ' + label;
+  w.focus = (w.focus ? w.focus + ' · ' : '') + 'microciclo ' + label.toLowerCase();
+  w.exercises = (w.exercises||[]).map(function(ex, idx){
+    const changed = __mutateExerciseForWeek(ex, weekIndex, person, phase);
+    if(idx===0 && changed.tip) changed.tip = changed.tip + ' Primeira série sempre vale como ensaio técnico antes da carga principal.';
+    return changed;
+  });
+  return w;
+}
+
+function __buildExerciseWeekNav(prefix, weekIndex, totalWeeks, navFnName){
+  const range = __getExerciseWeekRange(weekIndex);
+  const cycle = __weekVariantLabel(weekIndex);
+  return '<div class="ex-week-wrap"><div class="wn"><div class="wn-a" onclick="'+navFnName+'(-1)">‹</div><div class="wn-c"><div class="wn-n">Semana de treino '+(weekIndex+1)+' de '+totalWeeks+'</div><div class="wn-d">'+range.label+'</div><span class="wn-t">'+cycle+'</span></div><div class="wn-a" onclick="'+navFnName+'(1)">›</div></div><div class="ex-week-note">A periodização gira em ciclos de adaptação, volume, intensidade técnica e deload ativo.</div></div>';
+}
+
+function getProcessedWorkout(person, workout, ctx){
+  const weekIndex = ctx && typeof ctx.weekIndex === 'number' ? ctx.weekIndex : 0;
+  const refDate = __getExerciseStartDate(weekIndex);
+  const windowInfo = getEquipmentWindowInfo(refDate);
+  if(!workout) return {workout:null,window:windowInfo};
+  const plan = __getPlanDistribution(person, ctx||{}, windowInfo);
+  let w = cloneObj(workout);
+  __CURRENT_TEMPLATE_CTX = {person:person, phase:(ctx&&ctx.phase)||1, day:(ctx&&ctx.day)||'', weekIndex:weekIndex, windowMode:windowInfo.mode, plan:plan};
+  w.exercises = (w.exercises||[]).map(function(ex, idx){
+    return __shapeExerciseForPlan(person, ex, ctx||{}, plan, windowInfo, idx);
+  });
+  __CURRENT_TEMPLATE_CTX = null;
+  w.equip = plan.summary || windowInfo.summary;
+  w.focus = [w.focus, plan.focusNote].filter(Boolean).join(' · ');
+  w = __applyWeekVariation(w, weekIndex, person, (ctx&&ctx.phase)||1);
+  return {workout:w, window:windowInfo, plan:plan};
+}
+
 if(document.getElementById('app-rodrigo') && document.getElementById('app-rodrigo').classList.contains('active')){
   // Preserve whichever app is open and refresh only if needed.
 }
