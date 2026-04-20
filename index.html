@@ -594,6 +594,217 @@ function goToLanding() {
 const DO = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
 const DL = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
 
+function cloneObj(obj){return JSON.parse(JSON.stringify(obj));}
+function dateOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function getEquipmentWindowInfo(refDate){
+  const current=dateOnly(refDate||new Date());
+  const cut=new Date(2026,3,27);
+  if(current>=cut){
+    return {
+      mode:'post27',
+      title:'Janela de equipamentos ativa',
+      summary:'Banco regulável · Halteres 5/7/10kg · Kettlebells 6/8kg · Mini bands · Peso corporal/tapete',
+      note:'A partir da semana de 27/04/2026 os treinos passam a considerar apenas banco regulável, halteres de 5kg, 7kg e 10kg, kettlebells de 6kg e 8kg e mini bands.',
+      pill:'Somente equipamentos novos'
+    };
+  }
+  return {
+    mode:'pre27',
+    title:'Janela de equipamentos ativa',
+    summary:'Bike · Estação MBX sentada/em pé · Step · Super band · Caneleiras 3kg · Peso corporal/tapete',
+    note:'Até 26/04/2026 os treinos usam apenas os equipamentos anteriores. A partir de 27/04/2026 o arquivo muda automaticamente para banco regulável, halteres 5/7/10kg, kettlebells 6/8kg e mini bands.',
+    pill:'Somente equipamentos anteriores'
+  };
+}
+function buildWindowBanner(windowInfo, accent){
+  const palette=(accent==='pink')
+    ? {bg:'#F8F3FD', bd:'#E8D4F0', tx:'#6D42A0'}
+    : {bg:'#FFF7ED', bd:'#FED7AA', tx:'#C2410C'};
+  return `<div style="font-size:12px;color:${palette.tx};font-weight:600;margin-bottom:10px;padding:10px 12px;background:${palette.bg};border-radius:10px;border:1px solid ${palette.bd}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;opacity:.8;margin-bottom:4px">${windowInfo.title}</div><div style="line-height:1.55">${windowInfo.note}</div></div><div style="white-space:nowrap;background:#fff;padding:4px 8px;border-radius:999px;border:1px solid ${palette.bd};font-size:10px">${windowInfo.pill}</div></div></div>`;
+}
+function normalizeText(s){return (s||'').toLowerCase();}
+function includesAny(text, arr){text=normalizeText(text);return arr.some(v=>text.indexOf(v)>=0);}
+function loadGuide(person, slot){
+  const guides={
+    rodrigo:{push:'par de 5kg, subindo para 7kg quando sobrar 2 repetições', press:'par de 5kg', row:'7kg por mão, podendo chegar a 10kg', curl:'5kg por mão', hinge:'par de 7kg ou um kettlebell de 8kg', squat:'kettlebell de 8kg ou par de 5kg', tri:'um halter de 5kg com as duas mãos', core:'peso corporal'},
+    marlene:{push:'peso corporal, mini band ou 1 halter de 5kg segurado com as duas mãos', press:'mini band ou um halter de 5kg com uma mão por vez', row:'um halter de 5kg por lado', curl:'um halter de 5kg, um braço por vez', hinge:'kettlebell de 6kg somente se estiver confortável', squat:'peso corporal ou kettlebell de 6kg se a técnica estiver estável', tri:'mini band ou um halter de 5kg com as duas mãos', core:'peso corporal'},
+    ivo:{push:'par de 5kg, avançando para 7kg quando o movimento ficar limpo', press:'par de 5kg', row:'7kg por mão', curl:'5kg por mão', hinge:'kettlebell de 6kg ou par de 5kg', squat:'kettlebell de 6kg ou 8kg conforme estabilidade', tri:'um halter de 5kg com as duas mãos', core:'peso corporal'},
+    rafael:{push:'par de 5kg ou 7kg; 10kg só se a execução continuar limpa', press:'par de 5kg ou 7kg', row:'7kg por mão, chegando a 10kg quando dominar o tronco', curl:'5kg ou 7kg por mão', hinge:'par de 7kg ou kettlebell de 8kg', squat:'kettlebell de 8kg ou par de 5kg', tri:'um halter de 5kg ou 7kg com as duas mãos', core:'peso corporal'}
+  };
+  const p=guides[person]||guides.rodrigo;
+  return p[slot]||'carga leve e estável';
+}
+function exerciseTemplate(ex, ctx){
+  const person=ctx.person||'rodrigo';
+  const name=normalizeText(ex.name);
+  const originalSteps=(ex.steps||[]).slice(0,4);
+  const fallback=(prefix, suffix)=>{
+    const out=[];
+    if(prefix) out.push(prefix);
+    originalSteps.forEach(s=>out.push(s));
+    if(suffix) out.push(suffix);
+    return out.length?out:['Ajuste a posição com calma, execute com controle e termine soltando a musculatura trabalhada.'];
+  };
+  if(name.indexOf('volta à calma')>=0 || name.indexOf('alongamento final')>=0 || name.indexOf('relaxamento final')>=0){
+    return {steps:[
+      'Pare o exercício principal, solte os braços ao lado do corpo e caminhe lentamente por alguns segundos até a respiração baixar.',
+      'Alongue a musculatura principal do treino sem forçar: permaneça por 30 segundos em cada posição e pare antes da dor aguda.',
+      'Mantenha ombros longe das orelhas, joelhos destravados e respire pelo nariz sempre que conseguir.',
+      'Ao final, inspire por 4 segundos, solte o ar por 6 segundos e repita de 5 a 8 ciclos para encerrar a sessão com o corpo mais calmo.'
+    ], tip:'Alongar e desacelerar ajuda a reduzir rigidez e melhora a recuperação para o treino seguinte.'};
+  }
+  if(name.indexOf('dia de recuperação')>=0 || name.indexOf('atividade opcional')>=0 || name.indexOf('mobilidade opcional')>=0 || name.indexOf('mobilidade orientada')>=0){
+    return {steps:[
+      'Separe um espaço livre, fique em pé com postura alta e decida se o dia será de mobilidade, caminhada leve ou descanso completo.',
+      'Comece por 3 a 5 minutos de movimentos lentos para pescoço, ombros, quadril e tornozelos, sempre em amplitude confortável.',
+      'Se optar por caminhar ou pedalar, mantenha ritmo de conversa, sem sensação de prova ou pressa.',
+      'Finalize com alongamentos leves e 2 minutos de respiração profunda para sinalizar ao corpo que o dia é de recuperação.'
+    ], tip:'Sessão opcional significa exatamente isso: se o corpo pedir descanso, descansar também faz parte do plano.'};
+  }
+  if(name.indexOf('aquecimento na bike')>=0 || name.indexOf('bike leve')>=0 || name.indexOf('pedalada')>=0){
+    return {steps:[
+      'Regule o banco da bike para que, com o pedal embaixo, o joelho fique levemente flexionado e nunca totalmente travado.',
+      'Suba com apoio, alinhe quadris para frente, segure o guidão sem apertar demais e mantenha o peito aberto.',
+      'Pedale por 2 minutos em ritmo leve, apenas para aumentar a temperatura corporal e lubrificar joelhos e quadris.',
+      'Passe para 2 a 4 minutos em ritmo moderado, girando as pernas de forma redonda, sem jogar o peso do corpo para os lados.',
+      'Nos minutos finais, diminua a resistência e desacelere até a respiração voltar a ficar confortável antes de iniciar a força.'
+    ], tip:'A bike deve aquecer, não cansar. O objetivo é chegar ao treino com o corpo pronto, não esgotado.'};
+  }
+  if(name.indexOf('aquecimento ativo com mini band')>=0){
+    return {steps:[
+      'Coloque uma mini band leve acima dos joelhos e fique em pé com pés na largura do quadril, joelhos destravados e abdômen levemente contraído.',
+      'Faça 10 a 12 passos laterais para cada lado mantendo os pés paralelos e o tronco estável, sem deixar os joelhos colapsarem para dentro.',
+      'Retire a band das pernas, segure-a com as duas mãos na altura do peito e faça 12 aberturas controladas, afastando as mãos até sentir a parte alta das costas ativar.',
+      'Depois, execute 8 a 10 elevações frontais sem carga ou com a própria band bem leve, subindo apenas até a linha dos ombros.',
+      'Finalize com 1 minuto de marcha no lugar, ombros relaxados e respiração firme, e então siga para o primeiro exercício do treino.'
+    ], tip:'Use mini band leve no aquecimento. O objetivo aqui é ativar articulações e postura, não fadigar.'};
+  }
+  const templates = {
+    'chest press sentado na estação': ['Sente no aparelho com costas totalmente apoiadas, pés firmes no chão e alças alinhadas à metade do peito, não ao pescoço.','Comece com a menor carga ou primeira placa confortável da estação; a subida deve sair limpa e sem prender a respiração.','Segure as alças com punhos retos, retraia levemente as escápulas e deixe os cotovelos apontados para baixo e para trás, em torno de 30 a 45 graus do tronco.','Empurre as alças para frente até quase estender os braços, sem travar os cotovelos no final.','Retorne em 2 a 3 segundos, mantendo o peito aberto e sem deixar a pilha bater, até sentir alongamento confortável no peitoral.','Ao terminar a série, solte uma alça de cada vez, estabilize o tronco e só então saia do aparelho.'],
+    'desenvolvimento em pé com super band': ['Pise no centro da super band com os dois pés afastados na largura do quadril e segure as pontas na altura dos ombros.','Fique alto, glúteos levemente contraídos e costelas encaixadas para não arquear a lombar quando os braços subirem.','Comece com cotovelos um pouco à frente do tronco e punhos neutros, como se formasse um pequeno V na frente do rosto.','Empurre as mãos para cima até os braços ficarem quase estendidos acima da cabeça, mantendo pescoço longo e ombros longe das orelhas.','Desça em 2 a 3 segundos até a linha das orelhas, sem perder a tensão da band e sem deixar o abdômen relaxar.','Se a band puxar demais, reduza a tensão encurtando menos o elástico ou usando amplitude menor.'],
+    'tríceps na polia alta da estação': ['Fique de frente para a polia com pés afastados na largura do quadril, joelhos soltos e peito aberto.','Segure a barra ou corda com pegada confortável e traga os cotovelos para perto das costelas, deixando-os fixos ao lado do corpo.','Inicie com antebraços apontando para cima, sem elevar os ombros e sem jogar o tronco para frente.','Empurre o acessório para baixo até quase estender os braços, apertando o tríceps no final do movimento.','Volte lentamente até o ponto em que os antebraços fiquem novamente dobrados, mas sem deixar a pilha encostar forte.','Se os cotovelos abrirem ou o ombro subir, reduza a carga e recomece com mais controle.'],
+    'puxada alta': ['Sente na estação com coxas firmes sob o apoio, pés totalmente apoiados e peito orgulhoso, como se quisesse mostrar a camiseta para frente.','Segure a barra um pouco mais aberta que a largura dos ombros, com punhos neutros e sem enrolar os ombros para frente.','Antes de puxar, faça uma pequena depressão das escápulas: imagine ombros descendo e costas ficando largas.','Puxe a barra na direção da parte alta do peito, cotovelos descendo para os lados e ligeiramente para trás, sem jogar o tronco para trás.','Segure 1 segundo na parte baixa sentindo dorsais e parte média das costas, depois devolva em 2 a 3 segundos até quase estender os braços.','A carga ideal é a que permite manter o tronco alto do início ao fim, sem balanço e sem puxar atrás da cabeça.'],
+    'remada baixa': ['Sente ou posicione-se de forma estável na remada, com peito aberto, coluna neutra e abdômen ativo desde antes da primeira repetição.','Comece com braços quase estendidos, ombros para baixo e punhos alinhados ao antebraço.','Puxe o acessório na direção do umbigo ou parte baixa do abdômen, conduzindo o movimento pelos cotovelos e não pelos punhos.','No final da puxada, aproxime as escápulas sem exagerar e sem projetar a cabeça para frente.','Retorne lentamente em 2 a 3 segundos até o braço quase estender, mantendo o peito aberto e sem deixar a carga arrancar seu tronco.','Se o corpo começar a balançar para trás, reduza a carga imediatamente.'],
+    'rosca com super band': ['Pise no centro da super band com os dois pés e segure as pontas com as mãos ao lado do corpo.','Fique em pé com joelhos destravados, abdômen firme e cotovelos colados perto das costelas do início ao fim.','Suba as mãos em direção aos ombros girando as palmas para cima, sem balançar o tronco e sem mover os cotovelos para frente.','Pare um instante próximo ao ombro e desça em 2 a 3 segundos até quase estender o cotovelo.','Mantenha o punho neutro, sem dobrá-lo para trás, e repita apenas enquanto conseguir manter o corpo parado.','Se a band puxar demais desde o começo, alivie a tensão aproximando menos os pés ou usando uma faixa mais leve.'],
+    'agachamento livre controlado': ['Fique em pé com os pés na largura dos ombros e pontas levemente viradas para fora, o suficiente para os joelhos acompanharem essa direção.','Contraia levemente o abdômen, mantenha o peito aberto e deixe os braços estendidos à frente como contrapeso, se ajudar no equilíbrio.','Inicie o movimento dobrando quadris e joelhos ao mesmo tempo, como se fosse sentar em um banco atrás de você.','Desça até o ponto em que a coluna continue neutra, os calcanhares permaneçam no chão e os joelhos não fechem para dentro.','Suba empurrando o chão com o meio do pé, apertando glúteos ao final e sem projetar o quadril para frente em excesso.','Se faltar mobilidade, use uma cadeira como referência de altura ou reduza a amplitude temporariamente.'],
+    'step-up': ['Posicione o step sobre uma superfície firme e teste a altura antes da série; se balançar, reorganize o espaço.','Coloque um pé inteiro sobre o step, com o joelho apontando na mesma direção dos dedos do pé e o tronco levemente inclinado à frente.','Empurre o step com a perna de cima até subir, evitando dar impulso exagerado com a perna que ficou no chão.','Estabilize por um instante no alto, quadris nivelados e abdômen firme, antes de iniciar a descida.','Desça controlando a volta pela mesma perna, tocando o chão com suavidade e sem cair de volta.','Se houver dúvida de equilíbrio, use parede ou apoio lateral com a ponta dos dedos.'],
+    'extensora': ['Sente na cadeira extensora com costas apoiadas e joelhos alinhados ao eixo do aparelho.','Ajuste o rolo na parte da frente da canela, logo acima do peito do pé, e segure as alças laterais para estabilizar o tronco.','Comece com joelhos dobrados em amplitude confortável, sem deixar o quadril escorregar para frente no assento.','Estenda as pernas até perto da linha reta, mas sem travar os joelhos no final do movimento.','Segure 1 segundo sentindo o quadríceps e retorne em 2 a 3 segundos até o ponto inicial, sem deixar a pilha bater.','Se sentir o joelho incomodar, reduza a carga e trabalhe uma amplitude menor até a execução ficar confortável.'],
+    'flexora': ['Ajuste o aparelho para que o apoio fique logo acima do tornozelo e seu joelho coincida com o eixo de rotação.','Mantenha quadris encaixados e abdômen levemente firme para o corpo não dançar durante a repetição.','Puxe o rolo flexionando os joelhos até o ponto em que sentir o posterior de coxa trabalhar sem dor ou cãibra.','Segure 1 segundo no final e devolva em 2 a 3 segundos, sem deixar a carga puxar sua perna de volta.','Respire normalmente, evitando prender o ar para completar a série.','Se a lombar começar a compensar, reduza a carga e recomece com menos pressa.'],
+    'ponte de glúteos no tapete': ['Deite no tapete de barriga para cima, joelhos dobrados e pés apoiados na largura do quadril.','Aproxime os calcanhares do corpo até que as pontas dos dedos quase alcancem o calcanhar; isso costuma facilitar o trabalho do glúteo.','Antes de subir, pressione levemente a lombar contra o chão e mantenha o queixo neutro, olhando para o teto.','Empurre os pés no solo e eleve o quadril até formar uma linha entre joelhos, quadris e ombros, sem arquear demais a lombar.','Segure 1 segundo no alto apertando glúteos e desça devagar vértebra por vértebra até tocar o chão.','Se quiser progredir, use mini band acima dos joelhos ou apoio extra dos braços ao lado do corpo para maior estabilidade.'],
+    'panturrilha no step': ['Fique em pé com a ponta dos pés apoiada na borda do step e calcanhares livres para subir e descer.','Use parede, banco ou apoio lateral com a ponta dos dedos se precisar de equilíbrio extra.','Desça os calcanhares até sentir alongamento leve na panturrilha, sem dor e sem deixar o tornozelo colapsar para dentro.','Suba empurrando o chão pela ponta dos pés até a maior contração confortável, mantendo o peso entre primeiro e segundo dedos do pé.','Segure 1 segundo no alto e desça lentamente, evitando transformar o movimento em balanço.','Quando a técnica estiver firme, acrescente carga leve nas mãos, mas apenas sem perder a amplitude.'],
+    'dead bug no tapete': ['Deite no tapete de barriga para cima e leve braços apontados para o teto, quadris e joelhos dobrados a 90 graus.','Pressione levemente a lombar contra o chão antes de iniciar e mantenha essa pressão durante todo o exercício.','Estenda devagar uma perna e o braço oposto ao mesmo tempo até quase tocar o chão, sem deixar a lombar arquear.','Volte ao centro controlando o movimento e repita do outro lado, alternando sem pressa.','No complemento de prancha inclinada, apoie antebraços ou mãos no banco, forme uma linha reta do tornozelo ao ombro e segure respirando normalmente.','Interrompa a série quando a lombar perder contato com o chão ou quando o quadril começar a rodar.'],
+    'mini band pull-apart': ['Segure a mini band com as duas mãos na altura do peito, braços estendidos porém não travados e ombros longe das orelhas.','Antes de abrir, deixe o peito alto e as costelas encaixadas para a lombar não compensar.','Afaste as mãos até a band tocar ou quase tocar o peito, aproximando as escápulas no final do movimento.','Segure 1 segundo no ponto de maior abertura sem elevar os ombros e sem dobrar os cotovelos para roubar.','Retorne lentamente até a posição inicial mantendo uma leve tensão na band.','Se o pescoço tensionar, use uma mini band mais leve ou reduza a amplitude.'],
+    'prancha inclinada no banco': ['Apoie mãos ou antebraços no banco e caminhe com os pés para trás até formar uma linha reta do tornozelo ao ombro.','Deixe mãos abaixo dos ombros, quadris alinhados e abdômen levemente contraído como se quisesse aproximar costelas e quadril.','Empurre o banco para longe com os braços para ativar escápulas e evitar que o peito afunde.','Respire curto e constante pelo nariz ou pelo nariz/boca, sem prender o ar.','Mantenha glúteos ativos e pescoço neutro até o fim do tempo prescrito.','Encerre antes se a lombar começar a descer ou se o quadril subir demais.']
+  };
+  for (const key in templates){
+    if(name.indexOf(key)>=0){
+      return {steps:templates[key], tip:ex.tip||'Priorize execução controlada e postura estável do início ao fim.'};
+    }
+  }
+  if(name.indexOf('supino reto')>=0 && name.indexOf('banco')>=0){
+    return {steps:[`Ajuste o banco em posição reta, sente na borda e pegue ${loadGuide(person,'push')} antes de se deitar com controle.`,'Deite apoiando cabeça, costas altas e glúteos no banco, com pés firmes no chão e escápulas levemente encaixadas para trás e para baixo.','Comece com halteres na linha média do peito, punhos retos e cotovelos cerca de 30 a 45 graus afastados do tronco.','Desça em 2 a 3 segundos até os halteres chegarem perto da lateral do peito, sem deixar o ombro rodar para frente.','Empurre para cima e levemente para dentro até quase estender os braços, sem bater um halter no outro e sem levantar o quadril do banco.','Ao terminar, traga os halteres para as coxas, sente com ajuda do embalo das pernas e só então coloque a carga no chão.'], tip:ex.tip||'Se o punho dobrar ou o ombro perder estabilidade, reduza o peso e mantenha a mesma técnica.'};
+  }
+  if(name.indexOf('supino inclinado')>=0){
+    return {steps:[`Ajuste o encosto para uma inclinação moderada, em torno de 30 a 45 graus, e use ${loadGuide(person,'push')}.`,'Sente, apoie bem as costas no banco, firme os pés no chão e mantenha a cabeça alinhada ao encosto.','Leve os halteres para a linha alta do peito com punhos neutros e cotovelos apontando para baixo e para os lados, sem abrir demais.','Desça controlando até sentir alongamento confortável no peitoral superior e na frente do ombro.','Suba em diagonal para cima, aproximando levemente os halteres no final sem bater um no outro e sem perder o apoio das escápulas.','Se o ombro pinçar, reduza a amplitude e confira se o banco não está inclinado demais.'], tip:ex.tip||'Inclinação excessiva transforma o movimento em ombro demais. Moderado costuma funcionar melhor.'};
+  }
+  if(name.indexOf('desenvolvimento sentado')>=0){
+    return {steps:[`Deixe o banco quase vertical e use ${loadGuide(person,'press')} para conseguir manter o tronco totalmente estável.`,'Sente com a lombar apoiada, pés firmes no chão e abdômen levemente contraído, sem empinar o peito.','Comece com os halteres ao lado das orelhas, cotovelos um pouco à frente do tronco e antebraços verticais.','Empurre os halteres para cima até quase estender os braços, mantendo pescoço longo e ombros longe das orelhas.','Desça em 2 a 3 segundos até os halteres voltarem à linha das orelhas, sem deixar o cotovelo cair muito para trás.','Se a lombar começar a arquear, reduza o peso ou faça uma mão por vez.'], tip:ex.tip||'O desenvolvimento é um exercício de postura tanto quanto de ombro. Banco e abdômen firmes o tempo todo.'};
+  }
+  if(name.indexOf('remada unilateral')>=0){
+    return {steps:[`Apoie uma mão e um joelho no banco e use ${loadGuide(person,'row')} na mão livre.`,'Mantenha costas retas, pescoço alinhado com a coluna e a mão de apoio empurrando o banco para estabilizar o tronco.','Deixe o braço que segura o halter apontado para baixo com ombro longe da orelha e palma voltada para dentro.','Puxe o cotovelo para trás e levemente em direção ao quadril, sem girar o tronco e sem jogar o ombro para cima.','Pause 1 segundo no final sentindo costas e dorsal, depois desça em 2 a 3 segundos até o braço quase estender por completo.','Conclua todas as repetições de um lado, reorganize o apoio e só então faça o outro.'], tip:ex.tip||'Remada unilateral boa parece silenciosa: tronco estável, cotovelo guiando e halter sem balanço.'};
+  }
+  if(name.indexOf('rosca alternada')>=0){
+    return {steps:[`Fique em pé ou sente-se com postura alta e use ${loadGuide(person,'curl')} se conseguir manter o corpo parado.`,'Deixe os cotovelos próximos ao tronco, punhos neutros e ombros relaxados antes de iniciar a primeira repetição.','Suba um halter por vez girando a palma para cima ao longo da subida, sem mover o cotovelo para frente.','Pare um instante próximo ao ombro e desça em 2 a 3 segundos até quase estender o braço.','Enquanto um braço trabalha, o outro permanece estável ao lado do corpo, sem começar a balançar junto.','Se a lombar ajudar ou o cotovelo sair muito da costela, o peso está acima do ideal.'], tip:ex.tip||'Braço alternado costuma facilitar controle. Use isso a favor da técnica.'};
+  }
+  if(name.indexOf('rosca martelo')>=0){
+    return {steps:[`Segure ${loadGuide(person,'curl')} com as palmas voltadas uma para a outra, como se segurasse duas malas.`,'Fique com peito aberto, joelhos destravados e cotovelos colados no corpo desde o início.','Suba os halteres até perto da linha dos ombros sem girar as mãos, mantendo o punho neutro.','Segure 1 segundo na parte alta e desça lentamente, evitando deixar o halter despencar.','Mantenha ombros baixos e pescoço solto para que o esforço fique no braço e antebraço.','Se começar a balançar o tronco, reduza imediatamente a carga.'], tip:ex.tip||'A rosca martelo costuma pedir menos rotação do punho e pode ficar mais confortável para antebraço.'};
+  }
+  if(name.indexOf('agachamento goblet')>=0){
+    return {steps:[`Segure ${loadGuide(person,'squat')} junto ao peito, com cotovelos apontando para baixo e a carga encostada no tronco.`,'Afaste os pés na largura dos ombros, deixe as pontas levemente abertas e distribua o peso no meio do pé.','Inicie sentando quadris para trás e para baixo, mantendo peito alto e abdômen firme para a coluna não arredondar.','Desça até o ponto em que calcanhares permaneçam no chão e joelhos continuem acompanhando a linha dos dedos dos pés.','Suba empurrando o chão, apertando glúteos no final e mantendo a carga próxima ao peito o tempo todo.','Se perder profundidade ou estabilidade, reduza a carga antes de reduzir a postura.'], tip:ex.tip||'No goblet squat, a carga perto do peito ajuda a organizar o tronco. Use isso para priorizar técnica.'};
+  }
+  if(name.indexOf('levantamento romeno')>=0){
+    return {steps:[`Segure ${loadGuide(person,'hinge')} à frente das coxas com braços estendidos e pés na largura do quadril.`,'Mantenha joelhos levemente flexionados, peito aberto e barriga firme como se fosse receber um leve toque no abdômen.','Empurre o quadril para trás deslizando a carga perto das pernas, enquanto o tronco inclina para frente sem arredondar a coluna.','Desça até sentir alongamento claro na parte de trás da coxa, normalmente quando a carga chega perto do joelho ou metade da canela.','Suba trazendo o quadril para frente e apertando glúteos, sem jogar a lombar para trás no final.','Se a carga se afastar das pernas ou a lombar arredondar, reduza o peso e a amplitude.'], tip:ex.tip||'O romeno é um “quadril para trás e quadril para frente”. Pense menos nas mãos e mais no quadril.'};
+  }
+  if(name.indexOf('hip thrust no banco')>=0){
+    return {steps:[`Apoie a parte baixa das escápulas no banco e use ${loadGuide(person,'hinge')} sobre o quadril, com uma toalha se quiser conforto extra.`,'Deixe os pés no chão na largura do quadril, joelhos apontando para frente e queixo levemente recolhido para não jogar a cabeça para trás.','Comece com quadril próximo ao chão e mãos estabilizando a carga para ela não escorregar durante a série.','Empurre o chão e eleve o quadril até joelhos, quadris e ombros ficarem quase alinhados, apertando glúteos no topo.','Segure 1 segundo sem arquear a lombar e desça em 2 a 3 segundos até o quadril quase tocar o chão.','Ajuste a posição dos pés se sentir mais quadríceps ou lombar do que glúteo.'], tip:ex.tip||'No topo, pense em costelas encaixadas e glúteos fortes. Não transforme o exercício em hiperextensão lombar.'};
+  }
+  if(name.indexOf('sentar e levantar do banco')>=0){
+    return {steps:['Posicione o banco ou cadeira firme atrás de você e fique em pé com pés na largura dos ombros e braços à frente para equilíbrio.','Empurre o quadril para trás e desça controlando até tocar o banco de leve, sem despencar sobre ele.','Mantenha joelhos acompanhando os pés e peito aberto durante toda a descida.','Assim que tocar o banco, empurre o chão e volte a ficar em pé, apertando glúteos no final do movimento.','Se estiver difícil, use as mãos como apoio leve no começo; se estiver fácil, retire a ajuda das mãos.','A referência do banco serve para padronizar a profundidade e melhorar confiança no movimento.'], tip:ex.tip||'É um exercício funcional excelente para ganhar segurança e força de pernas sem complicação.'};
+  }
+  if(name.indexOf('elevação lateral')>=0){
+    return {steps:[`Fique em pé ou sentado com ${loadGuide(person,'press')} mais leve do que no desenvolvimento, porque a alavanca aqui é maior.`,'Deixe braços ao lado do corpo com leve dobra no cotovelo e polegares apontando levemente para frente.','Eleve os halteres para os lados até a linha dos ombros, sem encolher o ombro e sem balançar o tronco.','Pense em afastar as mãos do corpo e não em jogar os halteres para cima.','Desça em 2 a 3 segundos até quase tocar as coxas, mantendo tensão no ombro.','Se o trapézio assumir o movimento, reduza carga e amplitude.'], tip:ex.tip||'Elevação lateral fica mais bonita com pouco peso e muito controle do que com balanço.'};
+  }
+  if(name.indexOf('tríceps acima da cabeça')>=0){
+    return {steps:[`Sente no banco ou fique em pé firme e segure ${loadGuide(person,'tri')} com as duas mãos, uma por baixo da outra.`,'Leve o halter acima da cabeça e mantenha cotovelos apontando para frente, próximos um do outro, sem abrir demais.','Desça o peso atrás da cabeça apenas até sentir alongamento confortável no tríceps, mantendo o abdômen firme e pescoço neutro.','Estenda os cotovelos e leve o halter de volta para cima sem jogar o tronco para trás.','Segure 1 segundo no alto e repita mantendo os cotovelos o mais estáveis possível.','Se a lombar arquear, faça sentado com encosto ou reduza a carga.'], tip:ex.tip||'O segredo aqui é manter cotovelos estáveis; quando eles abrem demais, o exercício perde qualidade.'};
+  }
+  if(name.indexOf('flexão inclinada')>=0){
+    return {steps:['Apoie as mãos no banco ou apoio elevado, um pouco mais abertas que a largura dos ombros, e caminhe com os pés para trás.','Forme uma linha reta de tornozelos, quadris e ombros, com abdômen firme e glúteos levemente ativos.','Desça o peito na direção da borda do banco flexionando os cotovelos para trás e para os lados, sem abrir exageradamente.','Pare um pouco antes de perder a linha do tronco e empurre o banco até voltar à posição inicial.','Mantenha pescoço neutro, olhando para o banco e não para frente.','Se ainda estiver pesado, aumente a altura do apoio ou reduza a amplitude por algumas sessões.'], tip:ex.tip||'A flexão inclinada ensina o padrão da flexão normal com muito mais controle.'};
+  }
+  if(name.indexOf('pullover no banco')>=0){
+    return {steps:[`Deite no banco segurando ${loadGuide(person,'tri')} ou um halter levemente maior com as duas mãos sobre o peito.`,'Mantenha pés firmes no chão, costelas encaixadas e braços quase estendidos, com pequena dobra no cotovelo.','Leve o halter para trás da cabeça em arco, até sentir alongamento confortável em peito e dorsal, sem perder o controle do abdômen.','Puxe de volta para a posição inicial usando costas e peitoral, sem transformar o movimento em tríceps.','Movimente-se devagar, especialmente na descida, para não forçar ombro e lombar.','Se sentir o ombro instável, reduza a amplitude imediatamente.'], tip:ex.tip||'Pullover bom é estável e contínuo. Não precisa buscar grande amplitude para funcionar.'};
+  }
+  if(name.indexOf('abdução lateral')>=0){
+    return {steps:['Coloque a mini band acima dos joelhos ou nos tornozelos, de acordo com seu nível de controle e conforto. Se estiver usando caneleira, fixe-a bem acima do tornozelo.','Fique em pé segurando um apoio leve ou deite de lado com quadris alinhados; escolha a versão em que consiga manter o tronco estável.','Afaste a perna para o lado sem girar o pé para fora e sem inclinar o tronco para compensar.','Pare 1 segundo no ponto de maior abertura sentindo glúteo lateral e controle o retorno até quase encostar na outra perna.','Mantenha o abdômen firme e a pelve parada durante toda a série.','Se a resistência puxar o joelho para dentro, use uma intensidade mais leve e recupere a técnica.'], tip:ex.tip||'Glúteo médio responde muito à técnica. Melhor pouca abertura com controle do que muita abertura roubando.'};
+  }
+  if(name.indexOf('marcha estacionária com postura')>=0 || name.indexOf('caminhada do fazendeiro')>=0){
+    return {steps:['Fique em pé com postura alta, peito aberto e ombros baixos, como se um fio puxasse o topo da cabeça para cima.','Se estiver usando halteres, segure-os ao lado do corpo com pegada firme e punhos neutros; se não, mantenha braços ao lado do corpo com tensão leve.','Comece marchando no lugar ou caminhando devagar pelo espaço disponível, elevando pouco os joelhos e pisando macio.','Mantenha abdômen firme, quadris nivelados e olhar para frente durante todo o deslocamento.','Respire normalmente e evite encurtar o pescoço ou deixar os ombros subirem conforme o tempo passa.','Ao terminar, pare de forma gradual e solte a tensão das mãos e dos ombros antes de seguir para o próximo bloco.'], tip:ex.tip||'Esse exercício treina postura, estabilidade e capacidade de sustentar carga sem perder alinhamento.'};
+  }
+  if(name.indexOf('circuito a')>=0){
+    if(ctx.mode==='post27') return {steps:['Monte o circuito em um espaço só: banco ajustável já pronto, halteres separados e mini band ao alcance para não perder tempo entre exercícios.','Faça primeiro o supino reto no banco com halteres por 10 repetições, descansando só o tempo de sentar e organizar a próxima posição.','Em seguida, faça 10 remadas unilaterais por lado no banco, com tronco firme e halter puxando na direção do quadril.','Feche a rodada com 12 agachamentos goblet com kettlebell de 6kg ou 8kg, mantendo peito alto e joelhos acompanhando os pés.','Descanse de 60 a 75 segundos ao final da rodada, respirando fundo e retomando apenas quando a técnica puder continuar limpa.','Complete todas as rodadas previstas sem transformar o circuito em corrida; o foco é qualidade contínua.'], tip:ex.tip||'No circuito, a transição é rápida, mas a execução de cada exercício continua controlada.'};
+    return {steps:['Organize estação, espaço do step e carga antes de começar para não perder ritmo entre os exercícios.','Execute primeiro a puxada alta sentada com 10 repetições técnicas, mantendo tronco alto e sem balanço.','Passe para o chest press sentado na estação com 10 repetições, controlando a volta da carga.','Feche a rodada com 12 step-ups ou agachamentos livres controlados, conforme o plano do dia.','Descanse 60 a 75 segundos ao final da rodada e repita somente quando a respiração estiver estável.','O circuito deve parecer contínuo, mas nunca apressado a ponto de sacrificar postura.'], tip:ex.tip||'Circuito eficiente é aquele em que o coração sobe, mas a técnica continua reconhecível do começo ao fim.'};
+  }
+  if(name.indexOf('circuito b')>=0){
+    if(ctx.mode==='post27') return {steps:['Deixe o banco inclinado pronto e os halteres já ao lado do corpo para a troca de exercícios ficar organizada.','Faça primeiro a remada unilateral no banco, completando todas as repetições de um lado e depois do outro com o mesmo padrão de tronco.','Passe para o desenvolvimento sentado no banco, subindo e descendo a carga sem arquear a lombar.','Complete a rodada com prancha inclinada no banco pelo tempo definido, mantendo linha reta do tornozelo ao ombro.','Descanse 45 a 60 segundos e reinicie a rodada apenas quando braços e respiração voltarem ao controle.','A ideia é terminar a rodada cansado, mas ainda capaz de repetir o mesmo desenho técnico na série seguinte.'], tip:ex.tip||'Circuito B pede organização. Deixe tudo pronto antes da primeira repetição.'};
+    return {steps:['Organize remada, bloco de ombros e exercício de core antes da primeira rodada.','Faça a remada baixa sentada com cadência controlada, depois siga para o desenvolvimento com resistência leve a moderada.','Finalize com dead bug ou prancha no solo/tapete, priorizando abdômen firme e lombar estável.','Descanse 45 a 60 segundos ao final da rodada e só reinicie quando conseguir manter o mesmo padrão postural.','Não tente ganhar tempo correndo entre movimentos. Ganhe qualidade montando bem a rodada.','Se algum exercício do circuito perder forma, reduza carga ou reps antes de iniciar a próxima rodada.'], tip:ex.tip||'Em circuito, transição boa é aquela que mantém a sessão fluindo sem deixar a execução virar bagunça.'};
+  }
+  return {steps:fallback('Organize o espaço, ajuste a posição inicial e confirme qual é a carga ou resistência do exercício antes da primeira repetição.','Ao terminar a série, solte a musculatura trabalhada, respire fundo e só avance quando conseguir manter a mesma técnica na próxima execução.'), tip:ex.tip||'Priorize amplitude que você controla com postura estável e respiração contínua.'};
+}
+function transformExerciseByWindow(person, ex, ctx){
+  const out=cloneObj(ex||{});
+  const name=normalizeText(out.name);
+  if(ctx.mode==='pre27'){
+    if(name.indexOf('aquecimento com mini band')>=0){ out.name='Aquecimento na bike'; out.reps='5-6 min'; }
+    else if(includesAny(name,['supino','flexão inclinada','pressão de peito sentada com mini band','peitoral com mini band','crucifixo'])) out.name='Chest press sentado na estação';
+    else if(includesAny(name,['desenvolvimento sentado','pressão de ombro sentada','elevação lateral','pressão de ombro'])) out.name='Desenvolvimento em pé com super band';
+    else if(includesAny(name,['tríceps acima da cabeça'])) out.name='Tríceps na polia alta da estação';
+    else if(includesAny(name,['remada unilateral','remada curvada'])) out.name='Remada baixa na estação';
+    else if(includesAny(name,['rosca alternada','rosca martelo','rosca direta'])) out.name='Rosca com super band';
+    else if(includesAny(name,['agachamento goblet'])) out.name='Agachamento livre controlado';
+    else if(includesAny(name,['hip thrust'])) out.name='Ponte de glúteos no tapete';
+    else if(includesAny(name,['abdução lateral com mini band'])) out.name='Abdução lateral com caneleira';
+    else if(includesAny(name,['prancha inclinada no banco'])) out.name='Dead bug no tapete';
+    else if(includesAny(name,['sentar e levantar do banco'])) out.name='Agachamento livre controlado';
+    else if(includesAny(name,['caminhada do fazendeiro'])) out.name='Marcha estacionária com postura';
+  } else {
+    if(includesAny(name,['aquecimento na bike','bike leve','pedalada','aquecimento de pé + bike'])){ out.name='Aquecimento ativo com mini band'; out.reps='4-6 min'; }
+    else if(name.indexOf('bike intervalada')>=0){ out.name='Circuito A'; }
+    else if(includesAny(name,['puxada alta'])) out.name='Pullover no banco com 1 halter';
+    else if(includesAny(name,['remada baixa sentada','remada baixa','remada com super band'])) out.name='Remada unilateral com apoio no banco';
+    else if(includesAny(name,['chest press sentado na estação','peitoral com mini band ou voador sentado'])) out.name='Supino reto no banco com halteres';
+    else if(includesAny(name,['tríceps na polia alta'])) out.name='Tríceps acima da cabeça com 1 halter';
+    else if(includesAny(name,['face pull com super band'])) out.name='Mini band pull-apart';
+    else if(includesAny(name,['step-up'])) out.name='Sentar e levantar do banco';
+    else if(includesAny(name,['extensora'])) out.name='Agachamento goblet com kettlebell';
+    else if(includesAny(name,['flexora'])) out.name='Levantamento romeno com halteres';
+    else if(includesAny(name,['abdução lateral com caneleira'])) out.name='Abdução lateral com mini band';
+    else if(name.indexOf('agachamento livre controlado')>=0) out.name='Agachamento goblet com kettlebell';
+  }
+  const tpl=exerciseTemplate(out,{person:person,mode:ctx.mode,day:ctx.day,phase:ctx.phase});
+  out.steps=tpl.steps;
+  out.tip=tpl.tip||out.tip;
+  return out;
+}
+function getProcessedWorkout(person, workout, ctx){
+  const windowInfo=getEquipmentWindowInfo();
+  if(!workout) return {workout:null,window:windowInfo};
+  const w=cloneObj(workout);
+  w.equip=windowInfo.summary;
+  w.focus=(w.focus? w.focus + ' · ' : '') + (windowInfo.mode==='pre27' ? 'janela anterior de equipamentos até 26/04' : 'janela nova de equipamentos desde 27/04');
+  w.exercises=(w.exercises||[]).map(ex=>transformExerciseByWindow(person, ex, {mode:windowInfo.mode,day:ctx.day,phase:ctx.phase}));
+  return {workout:w,window:windowInfo};
+}
+
+
 function gMC(n) {
   if(n.includes('Café'))return'cafe';if(n.includes('Almoço')||n.includes('Fixo'))return'almoco';
   if(n.includes('Jantar'))return'jantar';if(n.includes('Ceia')||n.includes('Whey'))return'ceia';return'lanche';
@@ -1175,7 +1386,7 @@ function m_getExPhase(ewi){if(ewi<7)return 1;if(ewi<14)return 2;if(ewi<20)return
 function m_exAutoDetect(){
   const now=new Date(),exStart=new Date(2026,3,20);
   const dd=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(exStart.getFullYear(),exStart.getMonth(),exStart.getDate()))/864e5);
-  if(dd<0)return{ewi:0,edi:0,started:false,daysUntil:-dd};
+  if(dd<0)return{ewi:0,edi:0,started:true,daysUntil:0};
   if(dd>=26*7)return{ewi:25,edi:6,started:true,daysUntil:0};
   return{ewi:Math.min(Math.floor(dd/7),25),edi:Math.min(dd%7,6),started:true,daysUntil:0};
 }
@@ -1185,15 +1396,16 @@ function m_setExDay(d){m_exDay=d;m_renderEx();}
 function m_renderEx(){
   const exD=m_exAutoDetect(),phase=m_getExPhase(exD.ewi),pi=M_EX_PHASES[phase-1];
   let h='';
-  if(!exD.started){h+=`<div class="ex-phase" style="background:linear-gradient(135deg,#F59E0B,#D97706)"><h2>⏳ Exercícios</h2><p>Início 20/04/2026. Faltam ${exD.daysUntil} dias!</p></div>`;}
-  else{h+=`<div class="ex-phase"><h2>🌸 Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">18h</div><div class="ex-pst-l">horário</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div></div></div>`;}
+  h+=`<div class="ex-phase"><h2>🌸 Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">18h</div><div class="ex-pst-l">horário</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div></div></div>`;
   h+=`<div style="display:flex;gap:8px;margin-bottom:14px"><button onclick="wmStart('marlene')" style="padding:12px 20px;background:linear-gradient(135deg,#B08DD4,#D46A8A);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 12px rgba(176,141,212,.3)">▶ Treinar</button><div class="dp" style="flex:1;margin-bottom:0">`;
   DO.forEach((d,i)=>{h+=`<div class="dpi ${d===m_exDay?'active':''} ${i>=5?'wk':''}" onclick="m_setExDay('${d}')"><div class="dpi-l">${DL[i]}</div><div class="dpi-d">${DL[i].charAt(0)}</div></div>`;});
   h+='</div></div>';
   document.getElementById('m-exContent').innerHTML=h;
 
-  const workout=M_WORKOUTS[String(phase)]?.[m_exDay];
-  if(!workout){document.getElementById('m-exContent').insertAdjacentHTML('beforeend','<p style="text-align:center;color:var(--tmu);padding:40px">Sem treino</p>');return;}
+  const processed=getProcessedWorkout('marlene', M_WORKOUTS[String(phase)]?.[m_exDay], {phase:phase,day:m_exDay});
+  const workout=processed.workout;
+  if(!workout){document.getElementById('m-exContent').insertAdjacentHTML('beforeend','<p style=\"text-align:center;color:var(--tmu);padding:40px\">Sem treino</p>');return;}
+  document.getElementById('m-exContent').insertAdjacentHTML('beforeend', buildWindowBanner(processed.window,'pink'));
   let eh=`<div class="ex-card"><div class="ex-card-h"><div><div class="ex-card-n">${workout.title}</div><div style="font-size:12px;color:var(--ts);margin-top:2px">${workout.focus}</div></div><div class="ex-card-t">⏱ ${workout.time}</div></div>`;
   if(workout.equip)eh+=`<div style="font-size:12px;color:#6D42A0;font-weight:600;margin-bottom:10px;padding:6px 10px;background:#F8F3FD;border-radius:8px;border:1px solid #E8D4F0">🏠 ${workout.equip}</div>`;
   workout.exercises.forEach(ex=>{
@@ -1220,7 +1432,7 @@ function r_getExPhase(ewi){if(ewi<11)return 1;if(ewi<22)return 2;if(ewi<33)retur
 function r_exAutoDetect(){
   const now=new Date(),exStart=new Date(2026,3,20);
   const dd=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(exStart.getFullYear(),exStart.getMonth(),exStart.getDate()))/864e5);
-  if(dd<0)return{ewi:0,edi:0,started:false,daysUntil:-dd};
+  if(dd<0)return{ewi:0,edi:0,started:true,daysUntil:0};
   if(dd>=44*7)return{ewi:43,edi:6,started:true,daysUntil:0};
   return{ewi:Math.min(Math.floor(dd/7),43),edi:Math.min(dd%7,6),started:true,daysUntil:0};
 }
@@ -1232,15 +1444,16 @@ function r_setExView(v){r_exView=v;r_renderEx();}
 function r_renderEx(){
   const exD=r_exAutoDetect(),phase=r_getExPhase(exD.ewi),pi=R_EX_PHASES[phase-1];
   let h='';
-  if(!exD.started){h+=`<div class="ex-phase" style="background:linear-gradient(135deg,#F59E0B,#D97706)"><h2>⏳ Exercícios</h2><p>Início 20/04/2026. Faltam ${exD.daysUntil} dias!</p></div>`;}
-  else{h+=`<div class="ex-phase"><h2>🏋️ Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">18h</div><div class="ex-pst-l">horário</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div></div></div>`;}
+  h+=`<div class="ex-phase"><h2>🏋️ Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">18h</div><div class="ex-pst-l">horário</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div></div></div>`;
   h+=`<div style="display:flex;gap:8px;margin-bottom:14px"><button onclick="wmStart('rodrigo')" style="padding:12px 20px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 12px rgba(124,58,237,.3)">▶ Treinar</button><div class="dp" style="flex:1;margin-bottom:0">`;
   DO.forEach((d,i)=>{h+=`<div class="dpi ${d===r_exDay?'active':''} ${i>=5?'wk':''}" onclick="r_setExDay('${d}')"><div class="dpi-l">${DL[i]}</div><div class="dpi-d">${DL[i].charAt(0)}</div></div>`;});
   h+='</div></div>';
   document.getElementById('r-exContent').innerHTML=h;
 
-  const workout=R_WORKOUTS[String(phase)]?.[r_exDay];
-  if(!workout){document.getElementById('r-exContent').insertAdjacentHTML('beforeend','<p style="text-align:center;color:var(--tmu);padding:40px">Sem treino</p>');return;}
+  const processed=getProcessedWorkout('rodrigo', R_WORKOUTS[String(phase)]?.[r_exDay], {phase:phase,day:r_exDay});
+  const workout=processed.workout;
+  if(!workout){document.getElementById('r-exContent').insertAdjacentHTML('beforeend','<p style=\"text-align:center;color:var(--tmu);padding:40px\">Sem treino</p>');return;}
+  document.getElementById('r-exContent').insertAdjacentHTML('beforeend', buildWindowBanner(processed.window,'orange'));
   const isRest=r_exDay==='Domingo';
   let eh=`<div class="ex-card ${isRest?'rest':''}"><div class="ex-card-h"><div><div class="ex-card-n">${workout.title}</div><div style="font-size:12px;color:var(--ts);margin-top:2px">${workout.focus}</div></div><div class="ex-card-t">⏱ ${workout.time}</div></div>`;
   if(workout.equip)eh+=`<div style="font-size:12px;color:#5B21B6;font-weight:600;margin-bottom:10px;padding:6px 10px;background:#F3E8FF;border-radius:8px;border:1px solid #DDD6FE">🏠 ${workout.equip}</div>`;
@@ -1285,7 +1498,7 @@ function i_getExPhase(ewi){if(ewi<4)return 1;if(ewi<10)return 2;if(ewi<16)return
 function i_exAutoDetect(){
   const now=new Date(),exStart=new Date(2026,3,20);
   const dd=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(exStart.getFullYear(),exStart.getMonth(),exStart.getDate()))/864e5);
-  if(dd<0)return{ewi:0,edi:0,started:false,daysUntil:-dd};
+  if(dd<0)return{ewi:0,edi:0,started:true,daysUntil:0};
   return{ewi:Math.floor(dd/7),edi:Math.min(dd%7,6),started:true,daysUntil:0};
 }
 function i_renderEx(){
@@ -1294,18 +1507,16 @@ function i_renderEx(){
   const exD=i_exAutoDetect(),phase=i_getExPhase(exD.ewi),pi=IVO_EX_PHASES[phase-1];
   document.getElementById('i-hBadge').textContent='Sem '+(exD.ewi+1);
   let h='';
-  if(!exD.started){
-    h+=`<div class="ex-phase" style="background:linear-gradient(135deg,#F59E0B,#D97706)"><h2>⏳ Exercícios</h2><p>Início 20/04/2026. Faltam ${exD.daysUntil} dias.</p></div>`;
-  }else{
-    h+=`<div class="ex-phase"><h2>💙 Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.level}</div><div class="ex-pst-l">nível</div></div></div></div>`;
-  }
+  h+=`<div class="ex-phase"><h2>💙 Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.level}</div><div class="ex-pst-l">nível</div></div></div></div>`;
   h+=`<div style="display:flex;gap:8px;margin-bottom:14px"><button onclick="wmStart('ivo')" style="padding:12px 20px;background:linear-gradient(135deg,#1E40AF,#3B82F6);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 12px rgba(59,130,246,.3)">▶ Treinar</button><div class="dp" style="flex:1;margin-bottom:0">`;
   DO.forEach((d,idx)=>{h+=`<div class="dpi ${d===i_exDay?'active':''} ${idx>=5?'wk':''}" onclick="i_setExDay('${d}')"><div class="dpi-l">${DL[idx]}</div><div class="dpi-d">${DL[idx].charAt(0)}</div></div>`;});
   h+=`</div></div>`;
   container.innerHTML=h;
 
-  const workout=IVO_WORKOUTS[String(phase)]?.[i_exDay];
-  if(!workout){container.insertAdjacentHTML('beforeend','<p style="text-align:center;color:var(--tmu);padding:40px">Sem treino</p>');return;}
+  const processed=getProcessedWorkout('ivo', IVO_WORKOUTS[String(phase)]?.[i_exDay], {phase:phase,day:i_exDay});
+  const workout=processed.workout;
+  if(!workout){container.insertAdjacentHTML('beforeend','<p style=\"text-align:center;color:var(--tmu);padding:40px\">Sem treino</p>');return;}
+  container.insertAdjacentHTML('beforeend', buildWindowBanner(processed.window,'orange'));
   const isRest=i_exDay==='Domingo'||(workout.time||'')==='—';
   let eh=`<div class="ex-card ${isRest?'rest':''}"><div class="ex-card-h"><div><div class="ex-card-n">${workout.title}</div><div style="font-size:12px;color:var(--ts);margin-top:2px">${workout.focus||''}</div></div><div class="ex-card-t">⏱ ${workout.time||'—'}</div></div>`;
   if(workout.equip)eh+=`<div style="font-size:12px;color:#1E40AF;font-weight:600;margin-bottom:10px;padding:6px 10px;background:#EFF6FF;border-radius:8px;border:1px solid #BFDBFE">🏠 ${workout.equip}</div>`;
@@ -1338,7 +1549,7 @@ function rf_getExPhase(ewi){if(ewi<4)return 1;if(ewi<10)return 2;if(ewi<16)retur
 function rf_exAutoDetect(){
   const now=new Date(),exStart=new Date(2026,3,20);
   const dd=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(exStart.getFullYear(),exStart.getMonth(),exStart.getDate()))/864e5);
-  if(dd<0)return{ewi:0,edi:0,started:false,daysUntil:-dd};
+  if(dd<0)return{ewi:0,edi:0,started:true,daysUntil:0};
   return{ewi:Math.floor(dd/7),edi:Math.min(dd%7,6),started:true,daysUntil:0};
 }
 function rf_renderEx(){
@@ -1347,19 +1558,17 @@ function rf_renderEx(){
   const exD=rf_exAutoDetect(),phase=rf_getExPhase(exD.ewi),pi=RAFAEL_EX_PHASES[phase-1];
   document.getElementById('rf-hBadge').textContent='Sem '+(exD.ewi+1);
   let h='';
-  if(!exD.started){
-    h+=`<div class="ex-phase" style="background:linear-gradient(135deg,#F59E0B,#D97706)"><h2>⏳ Exercícios</h2><p>Início 20/04/2026. Faltam ${exD.daysUntil} dias.</p></div>`;
-  }else{
-    h+=`<div class="ex-phase"><h2>🔥 Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.level}</div><div class="ex-pst-l">nível</div></div></div></div>`;
-  }
+  h+=`<div class="ex-phase"><h2>🔥 Fase ${phase}: ${pi.name}</h2><p>${pi.desc}</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">${pi.dur}</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.freq}</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ${exD.ewi+1}</div><div class="ex-pst-l">semana</div></div><div class="ex-pst"><div class="ex-pst-v">${pi.level}</div><div class="ex-pst-l">nível</div></div></div></div>`;
   h+=`<div style="background:#FEF3C7;border-left:4px solid #F59E0B;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#78350F"><strong>⚠️ Importante:</strong> priorizar técnica, descanso entre séries e progressão gradual. Nada de testar carga máxima.</div>`;
   h+=`<div style="display:flex;gap:8px;margin-bottom:14px"><button onclick="wmStart('rafael')" style="padding:12px 20px;background:linear-gradient(135deg,#EA580C,#F97316);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 12px rgba(249,115,22,.3)">▶ Treinar</button><div class="dp" style="flex:1;margin-bottom:0">`;
   DO.forEach((d,idx)=>{h+=`<div class="dpi ${d===rf_exDay?'active':''} ${idx>=5?'wk':''}" onclick="rf_setExDay('${d}')"><div class="dpi-l">${DL[idx]}</div><div class="dpi-d">${DL[idx].charAt(0)}</div></div>`;});
   h+=`</div></div>`;
   container.innerHTML=h;
 
-  const workout=RAFAEL_WORKOUTS[String(phase)]?.[rf_exDay];
-  if(!workout){container.insertAdjacentHTML('beforeend','<p style="text-align:center;color:var(--tmu);padding:40px">Sem treino</p>');return;}
+  const processed=getProcessedWorkout('rafael', RAFAEL_WORKOUTS[String(phase)]?.[rf_exDay], {phase:phase,day:rf_exDay});
+  const workout=processed.workout;
+  if(!workout){container.insertAdjacentHTML('beforeend','<p style=\"text-align:center;color:var(--tmu);padding:40px\">Sem treino</p>');return;}
+  container.insertAdjacentHTML('beforeend', buildWindowBanner(processed.window,'orange'));
   const isRest=rf_exDay==='Domingo'||(workout.time||'')==='—';
   let eh=`<div class="ex-card ${isRest?'rest':''}"><div class="ex-card-h"><div><div class="ex-card-n">${workout.title}</div><div style="font-size:12px;color:var(--ts);margin-top:2px">${workout.focus||''}</div></div><div class="ex-card-t">⏱ ${workout.time||'—'}</div></div>`;
   if(workout.equip)eh+=`<div style="font-size:12px;color:#C2410C;font-weight:600;margin-bottom:10px;padding:6px 10px;background:#FFF7ED;border-radius:8px;border:1px solid #FED7AA">🏠 ${workout.equip}</div>`;
@@ -1421,7 +1630,8 @@ function wmStart(person) {
     exDay = rf_exDay;
     workout = RAFAEL_WORKOUTS[String(phase)]?.[exDay];
   }
-  if (exD && exD.started === false) { alert('Os exercícios começam em 20/04/2026.'); return; }
+  const processed = getProcessedWorkout(person, workout, {phase:phase, day:exDay});
+  workout = processed.workout;
   if (!workout || !workout.exercises || workout.exercises.length === 0) { alert('Sem treino para este dia!'); return; }
   if (exDay === 'Domingo') { alert('Domingo é descanso! 😴'); return; }
 
