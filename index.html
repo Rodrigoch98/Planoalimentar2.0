@@ -3119,5 +3119,835 @@ if(document.getElementById('app-rodrigo') && document.getElementById('app-rodrig
 })();
 </script>
 
+
+<script>
+// ================= V10 PATCH: cardápios integrados, meal prep claro e timer corrigido =================
+(function(){
+  if (window.__planPatchV10) return;
+  window.__planPatchV10 = true;
+
+  var style = document.createElement('style');
+  style.textContent = `
+  .prep-note{background:linear-gradient(135deg,var(--pl),var(--sl));border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:13px;color:var(--ts);line-height:1.6}
+  .prep-note strong{color:var(--tm)}
+  .prep-list{display:grid;gap:12px}
+  .prep-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px;box-shadow:var(--sh)}
+  .prep-card-h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+  .prep-card-title{font-size:14px;font-weight:800;color:var(--tm);line-height:1.35}
+  .prep-card-qty{font-size:11px;font-weight:700;color:var(--pd);background:var(--pl);border:1px solid var(--bd);padding:4px 8px;border-radius:999px;white-space:nowrap}
+  .prep-card-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .prep-block{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
+  .prep-block-label{font-size:11px;font-weight:800;color:var(--tmu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+  .prep-block-val{font-size:13px;color:var(--ts);line-height:1.6}
+  .prep-uses{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .prep-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--bd);font-size:12px;font-weight:700;color:var(--ts)}
+  .prep-combined{border-left:4px solid var(--p)}
+  .prep-person-row{font-size:13px;color:var(--ts);line-height:1.6;padding:8px 0;border-top:1px dashed var(--bd)}
+  .prep-person-row:first-of-type{border-top:none;padding-top:0}
+  .shop-note{background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.6}
+  .shop-note strong{color:#7C2D12}
+  @media (min-width:700px){.prep-card-grid{grid-template-columns:1fr 1fr}}
+  `;
+  document.head.appendChild(style);
+
+  function clone(obj){ return obj == null ? obj : JSON.parse(JSON.stringify(obj)); }
+  function round1(n){ return Math.round(n * 10) / 10; }
+  function num(n){ return typeof n === 'number' ? n : (parseFloat(n) || 0); }
+  function titleFromItem(item){ return String(item || '').split('(')[0].trim(); }
+  function qtyFromItem(item){ var m = String(item || '').match(/\(([^)]+)\)/); return m ? m[1].trim() : ''; }
+  function splitUses(str){
+    return String(str || '')
+      .split(/\s+\+\s+/)
+      .map(function(s){ return s.trim(); })
+      .filter(Boolean);
+  }
+  function iconForItem(name){
+    name = String(name || '');
+    if(/frango|peito|sobrecoxa/i.test(name)) return '🍗';
+    if(/carne|patinho|músculo|maminha|costela|hambúrguer|bife/i.test(name)) return '🥩';
+    if(/tilápia|merluza|peixe/i.test(name)) return '🐟';
+    if(/arroz/i.test(name)) return '🍚';
+    if(/macarrão/i.test(name)) return '🍝';
+    if(/batata|mandioca|purê/i.test(name)) return '🥔';
+    if(/feijão|lentilha/i.test(name)) return '🫘';
+    if(/vinagrete|salada/i.test(name)) return '🥗';
+    if(/molho|shoyu|mostarda|curry|tempero|páprica|orégano|chimichurri|pimenta|creme/i.test(name)) return '🧂';
+    return '📦';
+  }
+  function parseRiceAmount(food){
+    var m = String(food || '').match(/(\d+)\s*g\s*arroz(?:\s*int(?:egral)?\.?)?(?:\s*cozido)?/i);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+  function replaceRiceSide(food, newLabel){
+    return String(food || '').replace(/(\d+)\s*g\s*arroz(?:\s*int(?:egral)?\.?)?(?:\s*cozido)?/i, newLabel);
+  }
+  function findLunchMeal(weekObj, day){
+    var meals = (weekObj.days && weekObj.days[day]) || [];
+    for (var i = 0; i < meals.length; i++) {
+      if (/almoço/i.test(meals[i].name || '') && /arroz/i.test(meals[i].food || '')) return meals[i];
+    }
+    return null;
+  }
+  function adjustDualGramText(text, rawDelta, cookedDelta){
+    var s = String(text || '');
+    var m = s.match(/\((\d+)g([^)]*?)→\s*≈?(\d+)g/i);
+    if (!m) return s;
+    var raw = Math.max(0, parseInt(m[1],10) + rawDelta);
+    var cooked = Math.max(0, parseInt(m[3],10) + cookedDelta);
+    return s.replace(/\((\d+)g([^)]*?)→\s*≈?(\d+)g/i, '(' + raw + 'g' + m[2] + '→ ≈' + cooked + 'g');
+  }
+  function adjustSingleGramText(text, delta){
+    var s = String(text || '');
+    var m = s.match(/\((\d+)g([^)]*)\)/i);
+    if (!m) return s;
+    var val = Math.max(0, parseInt(m[1],10) + delta);
+    return s.replace(/\((\d+)g([^)]*)\)/i, '(' + val + 'g' + m[2] + ')');
+  }
+  function addOrAdjustPrep(weekObj, matchRe, spec){
+    var p = (weekObj.prep || []).find(function(x){ return matchRe.test(x.item || ''); });
+    if (p) {
+      if (spec.rawAdd && spec.cookedAdd) p.item = adjustDualGramText(p.item, spec.rawAdd, spec.cookedAdd);
+      else if (spec.rawAdd) p.item = adjustSingleGramText(p.item, spec.rawAdd);
+      if (spec.destAppend) p.dest = (p.dest ? p.dest + ' + ' : '') + spec.destAppend;
+      if (spec.modoSuffix && p.modo.indexOf(spec.modoSuffix) < 0) p.modo += ' · ' + spec.modoSuffix;
+    } else {
+      weekObj.prep.push({
+        item: spec.item,
+        modo: spec.modo,
+        dest: spec.destAppend || spec.dest || ''
+      });
+    }
+  }
+  function updateRicePrepAndShop(weekObj, changes, riceNameRe){
+    var totalRemovedCooked = changes.reduce(function(sum, c){ return sum + (c.riceCookedRemoved || 0); }, 0);
+    var ricePrep = (weekObj.prep || []).find(function(p){ return riceNameRe.test(p.item || ''); });
+    if (ricePrep && totalRemovedCooked > 0) {
+      var itemMatch = String(ricePrep.item).match(/\((\d+)g([^)]*?)→\s*≈?(\d+)g/i);
+      if (itemMatch) {
+        var raw = parseInt(itemMatch[1],10);
+        var cooked = parseInt(itemMatch[3],10);
+        var ratio = cooked > 0 ? (raw / cooked) : 0.35;
+        var rawReduction = Math.round(totalRemovedCooked * ratio);
+        ricePrep.item = adjustDualGramText(ricePrep.item, -rawReduction, -totalRemovedCooked);
+      }
+      ricePrep.modo = String(ricePrep.modo || '').replace(/\s*·\s*base menor.*$/i,'');
+      ricePrep.modo += ' · base menor para abrir espaço à rotação de carboidratos';
+      var remain = [];
+      Object.keys(weekObj.days || {}).forEach(function(day){
+        ((weekObj.days[day]) || []).forEach(function(ml){
+          var m = String(ml.food || '').match(/(\d+)\s*g\s*arroz\s*int/i);
+          if (m && /almoço/i.test(ml.name || '')) remain.push(day.slice(0,3) + ' alm ' + m[1] + 'g');
+        });
+      });
+      if (remain.length) ricePrep.dest = 'Mantido em: ' + remain.join(' · ');
+    }
+
+    var carbCat = (weekObj.shop || []).find(function(s){ return /CARBOIDRATOS/i.test(s.cat || ''); });
+    if (carbCat && totalRemovedCooked > 0) {
+      var rawReduce = Math.round(totalRemovedCooked * 0.35);
+      carbCat.text = adjustShopText(carbCat.text, /Arroz int(?:egral)?/i, -rawReduce);
+      changes.forEach(function(c){
+        carbCat.text = adjustShopText(carbCat.text, c.shopMatch, c.shopRawAdd, c.shopLabel);
+      });
+    }
+  }
+  function adjustShopText(text, re, delta, fallbackLabel){
+    var parts = String(text || '').split(' · ').map(function(x){ return x.trim(); }).filter(Boolean);
+    var found = false;
+    parts = parts.map(function(part){
+      if (re.test(part)) {
+        found = true;
+        var m = part.match(/\((\d+)\s*(g|kg|ml|un|pct|cxs|L)\)/i);
+        if (!m) return part;
+        var val = Math.max(0, parseInt(m[1],10) + delta);
+        return val > 0 ? part.replace(/\((\d+)\s*(g|kg|ml|un|pct|cxs|L)\)/i, '(' + val + m[2] + ')') : '';
+      }
+      return part;
+    }).filter(Boolean);
+    if (!found && delta > 0 && fallbackLabel) parts.push(fallbackLabel(delta));
+    return parts.join(' · ');
+  }
+
+  function applyMealSwap(weekObj, day, cfg){
+    var meal = findLunchMeal(weekObj, day);
+    if (!meal) return null;
+    var riceG = parseRiceAmount(meal.food);
+    if (!riceG) return null;
+    meal.food = replaceRiceSide(meal.food, cfg.sideLabel);
+    meal.kcal = Math.round(num(meal.kcal) - (riceG * cfg.from.kcalPerG) + (cfg.to.grams * cfg.to.kcalPerG));
+    meal.prot = round1(Math.max(0, num(meal.prot) - (riceG * cfg.from.protPerG) + (cfg.to.grams * cfg.to.protPerG)));
+    return {
+      day: day,
+      riceCookedRemoved: riceG,
+      sideName: cfg.sideLabel,
+      prepItem: cfg.prepItem,
+      prepModo: cfg.prepModo,
+      prepDest: day.slice(0,3) + ' almoço no lugar do arroz',
+      prepRawAdd: cfg.prepRawAdd,
+      prepCookedAdd: cfg.prepCookedAdd || 0,
+      shopMatch: cfg.shopMatch,
+      shopRawAdd: cfg.shopRawAdd,
+      shopLabel: cfg.shopLabel
+    };
+  }
+
+  function diversifyPlanWeeks(){
+    var rice = { kcalPerG: 1.24, protPerG: 0.026 };
+    var sweetPotato = { grams: 160, kcalPerG: 0.77, protPerG: 0.006 };
+    var pasta80 = { grams: 80, kcalPerG: 1.2375, protPerG: 0.0525 };
+    var sweetPotatoM = { grams: 130, kcalPerG: 0.77, protPerG: 0.006 };
+    var lentil80 = { grams: 80, kcalPerG: 1.16, protPerG: 0.09 };
+
+    Object.keys(R_W || {}).forEach(function(key){
+      var wk = R_W[key];
+      if (!wk || wk.__carbRotationDone) return;
+      var changes = [];
+      var c1 = applyMealSwap(wk, 'Terça', {
+        sideLabel: '160g batata-doce cozida',
+        from: rice, to: sweetPotato,
+        prepItem: 'Batata-doce extra (210g crua → ≈160g cozida)',
+        prepModo: 'Assar ou cozinhar',
+        prepRawAdd: 210,
+        prepCookedAdd: 160,
+        shopMatch: /Batata-doce/i,
+        shopRawAdd: 210,
+        shopLabel: function(delta){ return 'Batata-doce (' + delta + 'g)'; }
+      });
+      if (c1) changes.push(c1);
+      var c2 = applyMealSwap(wk, 'Quinta', {
+        sideLabel: '80g macarrão integral',
+        from: rice, to: pasta80,
+        prepItem: 'Macarrão Integral extra (32g cru → ≈80g cozido)',
+        prepModo: 'Cozinhar al dente',
+        prepRawAdd: 32,
+        prepCookedAdd: 80,
+        shopMatch: /Macarrão int|Macarrão integral/i,
+        shopRawAdd: 32,
+        shopLabel: function(delta){ return 'Macarrão integral (' + delta + 'g)'; }
+      });
+      if (c2) changes.push(c2);
+
+      if (changes.length) {
+        wk.__carbRotation = changes.map(function(c){ return c.day + ' almoço: arroz → ' + c.sideName; });
+        changes.forEach(function(c){
+          addOrAdjustPrep(wk, new RegExp(c.prepItem.split('(')[0].trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), {
+            item: c.prepItem,
+            modo: c.prepModo,
+            destAppend: c.prepDest,
+            rawAdd: c.prepRawAdd,
+            cookedAdd: c.prepCookedAdd
+          });
+        });
+        updateRicePrepAndShop(wk, changes, /Arroz Integral|Arroz Branco/i);
+      }
+      wk.__carbRotationDone = true;
+    });
+
+    Object.keys(M_W || {}).forEach(function(key){
+      var wk = M_W[key];
+      if (!wk || wk.__carbRotationDone) return;
+      var changes = [];
+      var c1 = applyMealSwap(wk, 'Terça', {
+        sideLabel: '130g batata-doce cozida',
+        from: rice, to: sweetPotatoM,
+        prepItem: 'Batata-doce extra (170g crua → ≈130g cozida)',
+        prepModo: 'Assar ou cozinhar',
+        prepRawAdd: 170,
+        prepCookedAdd: 130,
+        shopMatch: /Batata-doce/i,
+        shopRawAdd: 170,
+        shopLabel: function(delta){ return 'Batata-doce (' + delta + 'g)'; }
+      });
+      if (c1) changes.push(c1);
+      var c2 = applyMealSwap(wk, 'Sexta', {
+        sideLabel: '80g lentilha cozida',
+        from: rice, to: lentil80,
+        prepItem: 'Lentilha extra (32g crua → ≈80g cozida)',
+        prepModo: 'Cozinhar simples',
+        prepRawAdd: 32,
+        prepCookedAdd: 80,
+        shopMatch: /Lentilha/i,
+        shopRawAdd: 32,
+        shopLabel: function(delta){ return 'Lentilha (' + delta + 'g)'; }
+      });
+      if (c2) changes.push(c2);
+
+      if (changes.length) {
+        wk.__carbRotation = changes.map(function(c){ return c.day + ' almoço: arroz → ' + c.sideName; });
+        changes.forEach(function(c){
+          addOrAdjustPrep(wk, new RegExp(c.prepItem.split('(')[0].trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), {
+            item: c.prepItem,
+            modo: c.prepModo,
+            destAppend: c.prepDest,
+            rawAdd: c.prepRawAdd,
+            cookedAdd: c.prepCookedAdd
+          });
+        });
+        updateRicePrepAndShop(wk, changes, /Arroz Int|Arroz Integral|Arroz Branco/i);
+      }
+      wk.__carbRotationDone = true;
+    });
+  }
+
+  diversifyPlanWeeks();
+
+  function renderPrepCards(list, note){
+    var h = '';
+    if (note && note.length) h += '<div class="prep-note"><strong>Rodízio da semana:</strong> ' + note.join(' · ') + '.</div>';
+    h += '<div class="prep-list">';
+    (list || []).forEach(function(p){
+      var title = titleFromItem(p.item);
+      var qty = qtyFromItem(p.item);
+      var uses = splitUses(p.modo);
+      h += '<div class="prep-card">';
+      h += '<div class="prep-card-h"><div class="prep-card-title">' + iconForItem(title) + ' ' + title + '</div>' + (qty ? '<div class="prep-card-qty">' + qty + '</div>' : '') + '</div>';
+      h += '<div class="prep-card-grid">';
+      h += '<div class="prep-block"><div class="prep-block-label">Preparar assim</div><div class="prep-block-val">' + (p.modo || '—') + '</div></div>';
+      h += '<div class="prep-block"><div class="prep-block-label">Onde usar</div><div class="prep-block-val">' + (p.dest || '—') + '</div></div>';
+      h += '</div>';
+      if (uses.length > 1) {
+        h += '<div class="prep-uses">' + uses.map(function(u){ return '<span class="prep-chip">• ' + u + '</span>'; }).join('') + '</div>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+    return h;
+  }
+
+  function aggregatePrep(listA, nameA, listB, nameB){
+    var map = {};
+    function add(list, owner){
+      (list || []).forEach(function(p){
+        var name = titleFromItem(p.item);
+        var raw = 0, cooked = 0;
+        var m = String(p.item || '').match(/\((\d+)g[^)]*?(?:→\s*≈?(\d+)g)?/i);
+        if (m) { raw = parseInt(m[1],10) || 0; cooked = parseInt(m[2],10) || 0; }
+        if (!map[name]) map[name] = {name:name, raw:0, cooked:0, rows:[]};
+        map[name].raw += raw;
+        map[name].cooked += cooked;
+        map[name].rows.push({owner:owner, modo:p.modo || '', dest:p.dest || ''});
+      });
+    }
+    add(listA, nameA); add(listB, nameB);
+    return Object.keys(map).sort().map(function(k){ return map[k]; });
+  }
+
+  NutritionApp.prototype.renderPr = function(){
+    var el = document.getElementById(this.px + '-prepC');
+    if (!el) return;
+    var myWeeks = this.W[this.cW] || {};
+    var myPrep = myWeeks.prep || [];
+    var otherApp = this.px === 'r' ? M : R;
+    var otherW = this.px === 'r' ? M_W : R_W;
+    var otherName = this.px === 'r' ? 'Marlene' : 'Rodrigo';
+    var myName = this.px === 'r' ? 'Rodrigo' : 'Marlene';
+    var otherCardType = otherApp.cW;
+    var otherWeek = otherW[otherCardType] || {};
+    var otherPrep = otherWeek.prep || [];
+    var combined = aggregatePrep(myPrep, myName, otherPrep, otherName);
+    var h = '';
+    h += '<div class="prep-section"><div class="prep-header open" onclick="togglePrep(this)"><span>👨‍🍳 Meal Prep — ' + myName + ' (Cardápio ' + this.cW + ')</span><span class="chevron">▼</span></div><div class="prep-body open">';
+    h += renderPrepCards(myPrep, myWeeks.__carbRotation || []);
+    h += '</div></div>';
+    h += '<div class="prep-section"><div class="prep-header" onclick="togglePrep(this)"><span>👩‍🍳 Meal Prep — ' + otherName + ' (Cardápio ' + otherCardType + ')</span><span class="chevron">▼</span></div><div class="prep-body">';
+    h += renderPrepCards(otherPrep, otherWeek.__carbRotation || []);
+    h += '</div></div>';
+    h += '<div class="prep-section"><div class="prep-header" onclick="togglePrep(this)"><span>📊 Soma organizada — ' + myName + ' + ' + otherName + '</span><span class="chevron">▼</span></div><div class="prep-body">';
+    h += '<div class="prep-list">';
+    combined.forEach(function(item){
+      h += '<div class="prep-card prep-combined">';
+      h += '<div class="prep-card-h"><div class="prep-card-title">' + iconForItem(item.name) + ' ' + item.name + '</div><div class="prep-card-qty">' + (item.raw ? item.raw + 'g cru' : 'sem peso') + (item.cooked ? ' → ≈' + item.cooked + 'g' : '') + '</div></div>';
+      item.rows.forEach(function(row){
+        h += '<div class="prep-person-row"><strong>' + row.owner + ':</strong> ' + row.modo + '<br><span style="color:var(--tmu)">→ ' + row.dest + '</span></div>';
+      });
+      h += '</div>';
+    });
+    h += '</div></div></div>';
+    el.innerHTML = h;
+  };
+
+  var __origRenderSh = NutritionApp.prototype.renderSh;
+  NutritionApp.prototype.renderSh = function(){
+    __origRenderSh.call(this);
+    var el = document.getElementById(this.px + '-shopC');
+    if (!el) return;
+    var myWeek = this.W[this.cW] || {};
+    var otherApp = this.px === 'r' ? M : R;
+    var otherW = this.px === 'r' ? M_W : R_W;
+    var otherWeek = otherW[otherApp.cW] || {};
+    var msgs = [];
+    if (myWeek.__carbRotation && myWeek.__carbRotation.length) msgs.push('Ajustes deste cardápio: ' + myWeek.__carbRotation.join(' · '));
+    if (otherWeek.__carbRotation && otherWeek.__carbRotation.length) msgs.push('Outro plano aberto: ' + otherWeek.__carbRotation.join(' · '));
+    if (msgs.length) {
+      el.insertAdjacentHTML('afterbegin', '<div class="shop-note"><strong>Lista sincronizada com o cardápio:</strong> ' + msgs.join(' — ') + '.</div>');
+    }
+  };
+
+  function humanizeExerciseName(name){
+    var s = String(name || '');
+    var map = [
+      [/Remada baixa na estação/gi, 'Puxar sentado para as costas na estação'],
+      [/Remada unilateral com apoio no banco/gi, 'Puxar um lado por vez com apoio no banco'],
+      [/Remada unilateral/gi, 'Puxar um lado por vez'],
+      [/Puxada alta sentada na estação/gi, 'Puxar a barra para baixo sentado na estação'],
+      [/Puxada alta sentada/gi, 'Puxar a barra para baixo sentado'],
+      [/Face pull com super band/gi, 'Puxada alta para postura com elástico'],
+      [/Chest press sentado na estação/gi, 'Empurrar sentado na estação para o peito'],
+      [/Desenvolvimento sentado no banco/gi, 'Empurrar acima da cabeça sentado no banco'],
+      [/Desenvolvimento sentado com halteres/gi, 'Empurrar acima da cabeça sentado com halteres'],
+      [/Rosca alternada com halteres/gi, 'Dobrar os braços alternando com halteres'],
+      [/Rosca alternada sentada/gi, 'Dobrar os braços alternando sentado'],
+      [/Rosca martelo/gi, 'Dobrar os braços com a mão neutra'],
+      [/Supino reto no banco com halteres/gi, 'Empurrar deitado no banco com halteres'],
+      [/Supino inclinado no banco com halteres/gi, 'Empurrar no banco inclinado com halteres'],
+      [/Mini band pull-apart/gi, 'Abrir os braços com mini band para postura'],
+      [/Prancha inclinada no banco/gi, 'Prancha com apoio no banco'],
+      [/Agachamento goblet/gi, 'Agachamento com o peso na frente do peito'],
+      [/Step-up/gi, 'Subida no step'],
+      [/Extensora sentada/gi, 'Máquina para estender o joelho'],
+      [/Flexora sentada\/deitada disponível na estação/gi, 'Máquina para dobrar o joelho'],
+      [/Ponte de glúteos/gi, 'Subir o quadril deitado'],
+      [/Caminhada do fazendeiro curta/gi, 'Caminhada curta segurando pesos'],
+      [/Abdução lateral com mini band/gi, 'Abrir a perna para o lado com mini band'],
+      [/Hip thrust/gi, 'Elevação de quadril'],
+      [/Levantamento romeno/gi, 'Descer o peso levando o bumbum para trás'],
+      [/Pulldown/gi, 'Puxar a barra para baixo'],
+      [/Push-up/gi, 'Flexão de braços'],
+      [/Core/gi, 'abdômen e cintura']
+    ];
+    map.forEach(function(pair){ s = s.replace(pair[0], pair[1]); });
+    return s;
+  }
+  function humanizeExerciseText(text){
+    var s = String(text || '');
+    var repl = [
+      [/escápulas/gi, 'as costas atrás dos ombros'],
+      [/pegada neutra/gi, 'mão em posição neutra, como se segurasse um martelo'],
+      [/isometria/gi, 'segurar parado'],
+      [/unilateral/gi, 'um lado por vez'],
+      [/flexora/gi, 'máquina de dobrar o joelho'],
+      [/extensora/gi, 'máquina de estender o joelho'],
+      [/core/gi, 'abdômen e cintura'],
+      [/manguito/gi, 'músculos de proteção do ombro'],
+      [/rotação externa/gi, 'giro do braço para fora'],
+      [/tronco estável/gi, 'corpo firme sem balançar'],
+      [/coluna neutra/gi, 'costas alinhadas'],
+      [/amplitude/gi, 'altura do movimento'],
+      [/antebraço ficar vertical/gi, 'antebraço ficar reto para cima'],
+      [/abdômen firme/gi, 'barriga firme'],
+      [/dorsal/gi, 'costas'],
+      [/bíceps braquial/gi, 'bíceps'],
+      [/quadril/gi, 'região do quadril'],
+      [/cadência/gi, 'ritmo do movimento']
+    ];
+    repl.forEach(function(pair){ s = s.replace(pair[0], pair[1]); });
+    return s;
+  }
+  function humanizeWorkout(workout){
+    var w = clone(workout);
+    if (!w || !w.exercises) return w;
+    w.title = humanizeExerciseText(w.title || '');
+    w.focus = humanizeExerciseText(w.focus || '');
+    w.exercises = w.exercises.map(function(ex){
+      var out = clone(ex);
+      out.name = humanizeExerciseName(out.name || '');
+      out.steps = (out.steps || []).map(humanizeExerciseText);
+      out.tip = humanizeExerciseText(out.tip || '');
+      return out;
+    });
+    return w;
+  }
+
+  var __origGetProcessedWorkoutV10 = getProcessedWorkout;
+  getProcessedWorkout = function(person, workout, ctx){
+    var res = __origGetProcessedWorkoutV10(person, workout, ctx);
+    if (res && res.workout) res.workout = humanizeWorkout(res.workout);
+    return res;
+  };
+
+  NutritionApp.prototype.getMedsForTime = function(time, mealName) {
+    if (this.px === 'r') {
+      if (time === '05:30' && /Café/i.test(mealName || '')) {
+        var h = '<span class="mp mp-s" style="text-decoration:none;background:#FEF3C7;color:#92400E">⏰ Puran T4 175mcg (05:00 jejum)</span>';
+        h += '<span class="mp mp-b">💊 Sertralina 100mg</span>';
+        if (['Segunda','Quarta','Sexta','Domingo'].indexOf(this.cD) >= 0) h += '<span class="mp mp-v">💊 Clomifeno 25mg</span>';
+        h += '<span class="mp mp-a">💊 Kit Capilar</span>';
+        return h;
+      }
+      if (time === '12:00' || /Almoço/i.test(mealName || '')) {
+        return '<span class="mp mp-g">💊 D3 2000UI</span><span class="mp mp-b">💊 Ômega 3 Ultra</span><span class="mp mp-g">💊 Multi Growth</span>';
+      }
+      if (/Ceia/i.test(mealName || '') || time === '20:30') {
+        var extra = ['Quarta','Sábado'].indexOf(this.cD) >= 0;
+        return '<span class="mp mp-v">💊 Cabergolina 0,5mg' + (extra ? ' +extra' : '') + '</span><span class="mp mp-b">💊 Topiramato 100mg</span><span class="mp mp-g">💊 Magnésio 500mg</span>';
+      }
+    } else {
+      if (time === '09:30' && /Café/i.test(mealName || '')) return '<span class="mp mp-r">💊 Citalopram 20mg</span><span class="mp mp-g">💊 Colágeno 10g</span>';
+      if (/Almoço/i.test(mealName || '') && !/Fixo/i.test(mealName || '')) return '<span class="mp mp-g">💊 D3 2000UI</span><span class="mp mp-b">💊 Ômega-3 1000mg</span>';
+      if (/Jantar/i.test(mealName || '') || time === '19:00') return '<span class="mp mp-a">💊 Cálcio Citrato 500mg</span>';
+      if (/Ceia/i.test(mealName || '') || time === '23:00') return '<span class="mp mp-v">💊 Magnésio+B6</span>';
+    }
+    return '';
+  };
+
+  function wmIsCountableExercise(ex){
+    var n = String((ex && ex.name) || '').toLowerCase();
+    if (!ex || ex.sets === '-' || ex.sets === '—') return false;
+    return !(/aquecimento|volta à calma|respiraç|along|mobilidade|descanso|recuperação|dia de recuperação|caminhada leve/.test(n));
+  }
+  function wmSetsForExercise(ex){
+    var m = String((ex && ex.sets) || '').match(/(\d+)/);
+    return m ? parseInt(m[1],10) : 1;
+  }
+  function wmRestSeconds(ex){
+    var rest = String((ex && ex.rest) || '-');
+    var m = rest.match(/(\d+)/);
+    return m ? parseInt(m[1],10) : 0;
+  }
+  function wmParseTimedSubSteps(steps){
+    return parseSubSteps(steps || []).filter(function(s){ return s.secs > 0; });
+  }
+  function wmUpdateProgressBar(){
+    var total = Math.max(wmState.totalSets || 0, 1);
+    var progressed = Math.min((wmState.doneSets || 0) + (wmState.skippedSets || 0), total);
+    var pct = Math.round((progressed / total) * 100);
+    var bar = document.getElementById(wmState.px + '-wmProgressFill');
+    if (bar) bar.style.width = pct + '%';
+  }
+  function wmLoadWorkout(person){
+    var phase, workout, exDay, weekIndex;
+    if (person === 'rodrigo') {
+      weekIndex = r_exWeek; phase = r_getExPhase(weekIndex); exDay = r_exDay; workout = R_WORKOUTS[String(phase)] && R_WORKOUTS[String(phase)][exDay];
+    } else if (person === 'marlene') {
+      weekIndex = m_exWeek; phase = m_getExPhase(weekIndex); exDay = m_exDay; workout = M_WORKOUTS[String(phase)] && M_WORKOUTS[String(phase)][exDay];
+    } else if (person === 'ivo') {
+      weekIndex = i_exWeek; phase = i_getExPhase(weekIndex); exDay = i_exDay; workout = IVO_WORKOUTS[String(phase)] && IVO_WORKOUTS[String(phase)][exDay];
+    } else {
+      weekIndex = rf_exWeek; phase = rf_getExPhase(weekIndex); exDay = rf_exDay; workout = RAFAEL_WORKOUTS[String(phase)] && RAFAEL_WORKOUTS[String(phase)][exDay];
+    }
+    return getProcessedWorkout(person, workout, {phase:phase, day:exDay, weekIndex:weekIndex});
+  }
+
+  window.wmStart = function(person){
+    var pxMap = {rodrigo:'r', marlene:'m', ivo:'i', rafael:'rf'};
+    var px = pxMap[person] || 'r';
+    var processed = wmLoadWorkout(person);
+    var workout = processed && processed.workout;
+    if (!workout || !workout.exercises || !workout.exercises.length) { alert('Sem treino para este dia!'); return; }
+    if (/descanso total|descanso/i.test(workout.title || '')) { alert('Hoje é dia de descanso.'); return; }
+
+    wmState = {
+      active:true,
+      person:person,
+      px:px,
+      exIdx:0,
+      setIdx:0,
+      timer:null,
+      startTime:Date.now(),
+      totalSets:0,
+      doneSets:0,
+      skippedSets:0,
+      exercises:workout.exercises,
+      title:workout.title,
+      focus:workout.focus || '',
+      time:workout.time || '',
+      currentSubIdx:0,
+      timedSubs:[],
+      subSteps:[]
+    };
+
+    workout.exercises.forEach(function(ex){
+      if (wmIsCountableExercise(ex)) wmState.totalSets += wmSetsForExercise(ex);
+    });
+    if (!wmState.totalSets) wmState.totalSets = workout.exercises.length || 1;
+
+    if (wmAudioCtx && wmAudioCtx.state === 'suspended') wmAudioCtx.resume();
+    var overlay = document.getElementById(px + '-wmOverlay');
+    if (overlay) overlay.classList.add('active');
+    document.getElementById(px + '-wmTitle').textContent = workout.title;
+    document.getElementById(px + '-wmSubtitle').textContent = (workout.focus || '') + ' · ' + (workout.time || '');
+    wmUpdateProgressBar();
+    window.wmRenderEx();
+  };
+
+  window.wmClose = function(){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    ['r','m','i','rf'].forEach(function(px){
+      var ov = document.getElementById(px + '-wmOverlay');
+      if (ov) ov.classList.remove('active');
+    });
+    wmState.active = false;
+  };
+
+  window.wmRenderEx = function(){
+    var ex = wmState.exercises[wmState.exIdx];
+    if (!ex) { window.wmRenderSummary(); return; }
+    wmUpdateProgressBar();
+
+    var px = wmState.px;
+    var totalSetsForEx = wmSetsForExercise(ex);
+    var timedSubs = wmParseTimedSubSteps(ex.steps || []);
+    var totalTimed = timedSubs.reduce(function(a,s){ return a + s.secs; }, 0);
+    var isTimedExercise = /seg|min/i.test(String(ex.reps || '')) || totalTimed > 0;
+
+    var dots = '<div class="wm-set-dots">';
+    for (var i = 0; i < totalSetsForEx; i++) {
+      var cls = i < wmState.setIdx ? 'done' : (i === wmState.setIdx ? 'current' : '');
+      dots += '<div class="wm-set-dot ' + cls + '"></div>';
+    }
+    dots += '</div>';
+
+    var h = '<div class="wm-ex-card">';
+    h += '<div style="font-size:12px;font-weight:700;color:var(--tmu);text-transform:uppercase;margin-bottom:8px">Exercício ' + (wmState.exIdx + 1) + ' de ' + wmState.exercises.length + '</div>';
+    h += '<div class="wm-ex-name">' + ex.name + '</div>';
+    h += '<div class="wm-ex-detail">' + (ex.sets || '') + ' · ' + (ex.reps || '') + (ex.rest && ex.rest !== '-' ? ' · Descanso: ' + ex.rest : '') + '</div>';
+    h += dots;
+
+    if (timedSubs.length > 0) {
+      h += '<div class="wm-timer" id="' + px + '-wmTimerDisplay">' + fmtTime(totalTimed || timedSubs[0].secs || 30) + '</div>';
+      h += '<div id="' + px + '-wmSubStepLabel" style="font-size:14px;font-weight:600;color:var(--pd);margin-bottom:12px;min-height:40px;text-align:left;padding:8px 12px;background:var(--bg);border-radius:8px">Pronto para iniciar as etapas guiadas.</div>';
+      h += '<div style="margin:12px 0"><button class="wm-btn wm-btn-primary" id="' + px + '-wmStartSetBtn" onclick="wmStartSubSteps()">⏱ Iniciar etapa</button></div>';
+    } else if (isTimedExercise) {
+      var secM = String(ex.reps || '').match(/(\d+)\s*seg/i);
+      var minM = String(ex.reps || '').match(/(\d+)\s*min/i);
+      var totalSec = secM ? parseInt(secM[1],10) : (minM ? parseInt(minM[1],10) * 60 : 30);
+      h += '<div class="wm-timer" id="' + px + '-wmTimerDisplay">' + fmtTime(totalSec) + '</div>';
+      h += '<div style="margin:12px 0"><button class="wm-btn wm-btn-primary" id="' + px + '-wmStartSetBtn" onclick="wmStartTimer(' + totalSec + ')">⏱ Iniciar ' + fmtTime(totalSec) + '</button></div>';
+    } else {
+      h += '<div class="wm-timer">' + (ex.reps || '—') + '</div>';
+      h += '<div style="margin:12px 0"><button class="wm-btn wm-btn-primary" onclick="wmCompleteSet()">✅ Concluir série</button></div>';
+    }
+
+    h += '<div class="wm-steps"><ol>';
+    (ex.steps || []).forEach(function(step, idx){
+      var parsed = parseSubSteps([step])[0];
+      var badge = parsed && parsed.secs > 0 ? ' <span style="color:var(--pd);font-size:12px">[' + fmtTime(parsed.secs) + ']</span>' : '';
+      h += '<li id="' + px + '-wmStep_' + idx + '" style="padding:4px 0">' + step + badge + '</li>';
+    });
+    h += '</ol></div>';
+    if (ex.tip) h += '<div class="wm-tip">💡 ' + ex.tip + '</div>';
+    h += '</div>';
+
+    h += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px">';
+    if (timedSubs.length > 0) h += '<button class="wm-btn wm-btn-outline" onclick="wmSkipSubStep()" style="min-width:auto;padding:10px 16px;font-size:13px">Pular etapa ⏭</button>';
+    h += '<button class="wm-btn wm-btn-outline" onclick="wmSkipEx()" style="min-width:auto;padding:10px 16px;font-size:13px">Pular exercício ⏭</button>';
+    h += '</div>';
+
+    wmState.timedSubs = timedSubs;
+    wmState.currentSubIdx = 0;
+    document.getElementById(px + '-wmBody').innerHTML = h;
+  };
+
+  window.wmStartTimer = function(secs){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    var remaining = secs;
+    var px = wmState.px;
+    var display = document.getElementById(px + '-wmTimerDisplay');
+    var btn = document.getElementById(px + '-wmStartSetBtn');
+    if (btn) btn.style.display = 'none';
+    if (display) display.textContent = fmtTime(remaining);
+
+    wmState.timer = setInterval(function(){
+      remaining--;
+      if (display) display.textContent = fmtTime(Math.max(remaining,0));
+      if (remaining <= 3 && remaining > 0) wmBeep(660, .08);
+      if (remaining <= 0) {
+        clearInterval(wmState.timer); wmState.timer = null;
+        wmBeepDone();
+        if (display) { display.textContent = '✓'; display.classList.add('done'); }
+        setTimeout(function(){ window.wmCompleteSet(); }, 300);
+      }
+    }, 1000);
+  };
+
+  window.wmRunNextSub = function(){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    if (!wmState.timedSubs || wmState.currentSubIdx >= wmState.timedSubs.length) { window.wmCompleteSet(); return; }
+    var sub = wmState.timedSubs[wmState.currentSubIdx];
+    var px = wmState.px;
+    var remaining = sub.secs;
+    var display = document.getElementById(px + '-wmTimerDisplay');
+    var label = document.getElementById(px + '-wmSubStepLabel');
+
+    document.querySelectorAll('[id^="' + px + '-wmStep_"]').forEach(function(el){
+      el.style.background = 'none';
+      el.style.borderRadius = '0';
+      el.style.padding = '4px 0';
+      el.style.margin = '0';
+      el.style.fontWeight = '400';
+      el.style.textDecoration = 'none';
+    });
+    var current = document.getElementById(px + '-wmStep_' + sub.idx);
+    if (current) {
+      current.style.background = 'rgba(99,102,241,.12)';
+      current.style.borderRadius = '8px';
+      current.style.padding = '6px 10px';
+      current.style.margin = '0 -10px';
+      current.style.fontWeight = '700';
+      current.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    if (label) label.innerHTML = '<strong>Etapa ' + (wmState.currentSubIdx + 1) + ' de ' + wmState.timedSubs.length + ':</strong> ' + sub.text;
+    if (display) display.textContent = fmtTime(remaining);
+
+    wmState.timer = setInterval(function(){
+      remaining--;
+      if (display) display.textContent = fmtTime(Math.max(remaining,0));
+      if (remaining <= 3 && remaining > 0) wmBeep(660, .08);
+      if (remaining <= 0) {
+        clearInterval(wmState.timer); wmState.timer = null;
+        wmBeep(880, .1);
+        wmState.currentSubIdx++;
+        if (wmState.currentSubIdx < wmState.timedSubs.length) {
+          setTimeout(function(){ window.wmRunNextSub(); }, 200);
+        } else {
+          wmBeepDone();
+          if (display) { display.textContent = '✓'; display.classList.add('done'); }
+          setTimeout(function(){ window.wmCompleteSet(); }, 300);
+        }
+      }
+    }, 1000);
+  };
+
+  window.wmStartSubSteps = function(){
+    if (!wmState.timedSubs || !wmState.timedSubs.length) { window.wmCompleteSet(); return; }
+    var btn = document.getElementById(wmState.px + '-wmStartSetBtn');
+    if (btn) btn.style.display = 'none';
+    wmState.currentSubIdx = 0;
+    window.wmRunNextSub();
+  };
+
+  window.wmCompleteSet = function(){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    var ex = wmState.exercises[wmState.exIdx];
+    if (!ex) { window.wmRenderSummary(); return; }
+    var countable = wmIsCountableExercise(ex);
+    if (countable) wmState.doneSets += 1;
+    wmState.setIdx += 1;
+    var totalSetsForEx = wmSetsForExercise(ex);
+
+    if (wmState.setIdx >= totalSetsForEx) {
+      wmState.exIdx += 1;
+      wmState.setIdx = 0;
+      wmUpdateProgressBar();
+      if (wmState.exIdx >= wmState.exercises.length) { window.wmRenderSummary(); return; }
+      var restAfter = wmRestSeconds(ex);
+      if (restAfter > 0) window.wmStartRest(restAfter);
+      else window.wmRenderEx();
+    } else {
+      wmUpdateProgressBar();
+      var restSec = wmRestSeconds(ex);
+      if (restSec > 0) window.wmStartRest(restSec);
+      else window.wmRenderEx();
+    }
+  };
+
+  window.wmStartRest = function(secs){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    var px = wmState.px;
+    var remaining = secs;
+    wmUpdateProgressBar();
+    var h = '<div class="wm-ex-card">';
+    h += '<div style="font-size:14px;font-weight:700;color:#F59E0B;text-transform:uppercase;margin-bottom:8px">⏸ Descanso</div>';
+    h += '<div class="wm-timer rest" id="' + px + '-wmRestTimer">' + fmtTime(remaining) + '</div>';
+    h += '<div style="font-size:14px;color:var(--ts);margin-bottom:16px">Respire fundo, organize a postura e siga no ritmo do plano.</div>';
+    h += '<button class="wm-btn wm-btn-rest" onclick="wmSkipRest()">Pular descanso ⏭</button>';
+    h += '</div>';
+    document.getElementById(px + '-wmBody').innerHTML = h;
+
+    wmState.timer = setInterval(function(){
+      remaining--;
+      var d = document.getElementById(px + '-wmRestTimer');
+      if (d) d.textContent = fmtTime(Math.max(remaining,0));
+      if (remaining <= 3 && remaining > 0) wmBeep(440,.08);
+      if (remaining <= 0) {
+        clearInterval(wmState.timer); wmState.timer = null;
+        wmBeep(880,.12);
+        window.wmRenderEx();
+      }
+    }, 1000);
+  };
+
+  window.wmSkipRest = function(){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    window.wmRenderEx();
+  };
+
+  window.wmSkipSubStep = function(){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    if (!wmState.timedSubs || !wmState.timedSubs.length) return;
+    wmState.currentSubIdx = (typeof wmState.currentSubIdx === 'number' ? wmState.currentSubIdx : 0) + 1;
+    if (wmState.currentSubIdx < wmState.timedSubs.length) window.wmRunNextSub();
+    else window.wmCompleteSet();
+  };
+
+  window.wmSkipEx = function(){
+    if (wmState.timer) { clearInterval(wmState.timer); wmState.timer = null; }
+    var ex = wmState.exercises[wmState.exIdx];
+    if (ex) {
+      var total = wmSetsForExercise(ex);
+      var remaining = Math.max(total - wmState.setIdx, 0);
+      if (wmIsCountableExercise(ex)) wmState.skippedSets += remaining;
+      wmState.exIdx += 1;
+      wmState.setIdx = 0;
+      wmUpdateProgressBar();
+    }
+    if (wmState.exIdx >= wmState.exercises.length) window.wmRenderSummary();
+    else window.wmRenderEx();
+  };
+
+  window.wmRenderSummary = function(){
+    var px = wmState.px;
+    var elapsed = Math.round((Date.now() - wmState.startTime) / 1000);
+    wmBeepDone();
+    wmUpdateProgressBar();
+    var emojiMap = {rodrigo:'🏆', marlene:'🌸', ivo:'💙', rafael:'🔥'};
+    var emoji = emojiMap[wmState.person] || '✅';
+    var h = '<div class="wm-summary">';
+    h += '<div style="font-size:48px;margin-bottom:8px">' + emoji + '</div>';
+    h += '<h2>Treino finalizado</h2>';
+    h += '<div class="wm-summary-grid">';
+    h += '<div class="wm-summary-item"><div class="wm-summary-val">' + (wmState.doneSets || 0) + '</div><div class="wm-summary-label">séries concluídas</div></div>';
+    h += '<div class="wm-summary-item"><div class="wm-summary-val">' + (wmState.skippedSets || 0) + '</div><div class="wm-summary-label">séries puladas</div></div>';
+    h += '<div class="wm-summary-item"><div class="wm-summary-val">' + fmtTime(elapsed) + '</div><div class="wm-summary-label">tempo total</div></div>';
+    h += '<div class="wm-summary-item"><div class="wm-summary-val">' + (wmState.exercises ? wmState.exercises.length : 0) + '</div><div class="wm-summary-label">exercícios vistos</div></div>';
+    h += '</div>';
+    h += '<button class="wm-btn wm-btn-done" onclick="wmClose()">Fechar</button>';
+    h += '</div>';
+    document.getElementById(px + '-wmBody').innerHTML = h;
+  };
+
+  function refreshAfterPatch(){
+    try {
+      if (window.R && typeof R.renderW === 'function') R.renderW();
+      if (window.M && typeof M.renderW === 'function') M.renderW();
+      if (typeof r_renderEx === 'function') r_renderEx();
+      if (typeof m_renderEx === 'function') m_renderEx();
+      if (typeof i_renderEx === 'function') i_renderEx();
+      if (typeof rf_renderEx === 'function') rf_renderEx();
+    } catch(e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshAfterPatch);
+  else refreshAfterPatch();
+})();
+</script>
+
+
+<script>
+(function(){
+  function syncSummaryMetrics(){
+    try{
+      var rVals = document.querySelectorAll('#r-t-resumo .rs .rst .rst-v');
+      if (rVals[0]) rVals[0].textContent = '1445';
+      if (rVals[1]) rVals[1].textContent = '~132g';
+      var mVals = document.querySelectorAll('#m-t-resumo .rs .rst .rst-v');
+      if (mVals[0]) mVals[0].textContent = '1305';
+      if (mVals[1]) mVals[1].textContent = '~103g';
+    }catch(e){}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncSummaryMetrics);
+  else syncSummaryMetrics();
+})();
+</script>
+
 </body>
 </html>
