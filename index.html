@@ -6679,5 +6679,535 @@ NutritionApp.prototype.renderD = function(){
 })();
 </script>
 
+
+<script>
+(function(){
+  if (window.__portablePlannerPatchV11) return;
+  window.__portablePlannerPatchV11 = true;
+
+  var style = document.createElement('style');
+  style.textContent = `
+  .assembly-board{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 16px}
+  .assembly-card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:14px;box-shadow:var(--sh)}
+  .assembly-card h3{font-size:13px;font-weight:800;color:var(--tm);margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .assembly-count{font-size:11px;font-weight:800;color:var(--pd);background:var(--pl);border:1px solid var(--bd);padding:4px 8px;border-radius:999px;white-space:nowrap}
+  .assembly-list{display:flex;flex-direction:column;gap:8px}
+  .assembly-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--bd)}
+  .assembly-item:first-child{border-top:none;padding-top:0}
+  .assembly-time{flex-shrink:0;min-width:50px;font-size:12px;font-weight:800;color:var(--pd);background:var(--bg);padding:6px 8px;border-radius:10px;text-align:center}
+  .assembly-text{min-width:0}
+  .assembly-text strong{display:block;font-size:13px;color:var(--tm);line-height:1.35}
+  .assembly-text span{display:block;font-size:12px;color:var(--ts);line-height:1.45;margin-top:2px}
+  .assembly-empty{font-size:12px;color:var(--tmu)}
+
+  .meal-pack{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+  .meal-pack-top{display:flex;flex-wrap:wrap;gap:8px}
+  .pack-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid var(--bd);background:var(--bg);color:var(--ts)}
+  .pack-chip.kind{background:var(--pl);color:var(--pd)}
+  .pack-chip.boxes{background:var(--sl);color:var(--tm)}
+  .pack-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .pack-block{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+  .pack-block-label{font-size:11px;font-weight:800;color:var(--tmu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .pack-list{display:flex;flex-direction:column;gap:7px}
+  .pack-row{display:flex;gap:8px;align-items:flex-start}
+  .pack-dot{width:7px;height:7px;border-radius:50%;background:var(--p);margin-top:7px;flex-shrink:0}
+  .pack-row span{font-size:13px;color:var(--tm);line-height:1.45}
+  .pack-block.side .pack-dot{background:var(--s)}
+  .pack-block.extra .pack-dot{background:var(--ac)}
+  .pack-block.drink .pack-dot{background:var(--tmu)}
+  .pack-salad{font-size:12px;color:var(--ts);padding:9px 10px;border-radius:10px;background:var(--sf);border:1px dashed var(--bd)}
+  .portable-raw{background:var(--sf);border:1px dashed var(--bd);border-radius:12px;padding:0 12px 10px}
+  .portable-raw summary{cursor:pointer;list-style:none;font-size:12px;font-weight:800;color:var(--pd);padding:10px 0 6px}
+  .portable-raw summary::-webkit-details-marker{display:none}
+  .portable-raw summary::before{content:'▸ ';font-weight:900}
+  .portable-raw[open] summary::before{content:'▾ ';}
+
+  .prep-flow{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+  .prep-flow-step{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--bd);font-size:12px;font-weight:700;color:var(--ts)}
+  .prep-group{margin-top:14px}
+  .prep-group:first-child{margin-top:0}
+  .prep-group-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;padding:8px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--bd);font-size:13px;font-weight:800;color:var(--tm)}
+  .prep-group-count{font-size:11px;color:var(--pd);background:var(--pl);padding:4px 8px;border-radius:999px;border:1px solid var(--bd)}
+  .prep-dest-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .prep-dest-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 9px;border-radius:999px;background:var(--sf);border:1px solid var(--bd);font-size:11px;font-weight:700;color:var(--ts)}
+
+  .shop-summary{display:grid;grid-template-columns:1fr;gap:10px;margin:0 0 14px}
+  .shop-summary-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;box-shadow:var(--sh)}
+  .shop-summary-card .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+  .shop-summary-card strong{font-size:13px;color:var(--tm)}
+  .shop-summary-card span{font-size:12px;color:var(--ts);line-height:1.5}
+  .shop-groups{display:flex;flex-direction:column;gap:14px}
+  .shop-group{background:rgba(255,255,255,.001)}
+  .shop-group-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:8px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--bd)}
+  .shop-group-h strong{font-size:13px;color:var(--tm)}
+  .shop-group-h span{font-size:11px;color:var(--pd);background:var(--pl);padding:4px 8px;border-radius:999px;border:1px solid var(--bd)}
+  .shop-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .shop-item-card{display:flex;gap:10px;align-items:flex-start;background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:12px;box-shadow:var(--sh)}
+  .shop-item-card input{width:18px;height:18px;accent-color:var(--pd);margin-top:2px;flex-shrink:0}
+  .shop-item-main{min-width:0;flex:1}
+  .shop-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .shop-item-name{font-size:13px;font-weight:800;color:var(--tm);line-height:1.35}
+  .shop-item-qty{font-size:11px;font-weight:800;color:var(--pd);background:var(--pl);border:1px solid var(--bd);padding:4px 8px;border-radius:999px;white-space:nowrap}
+  .shop-item-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .shop-item-tag{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--bd);font-size:10px;font-weight:800;color:var(--ts);text-transform:uppercase;letter-spacing:.4px}
+  .shop-item-note{font-size:12px;color:var(--ts);margin-top:6px;line-height:1.45}
+
+  @media (min-width:760px){
+    .assembly-board{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .pack-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .shop-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .shop-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  `;
+  document.head.appendChild(style);
+
+  function esc(v){
+    return String(v == null ? '' : v)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function fmtShortDate(d){ return pad2(d.getDate()) + '/' + pad2(d.getMonth()+1) + '/' + d.getFullYear(); }
+  function dayIdx(day){
+    var arr = window.DO || ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+    var idx = arr.indexOf(day);
+    return idx >= 0 ? idx : 0;
+  }
+  function getCardDateLocal(app, day){
+    var wi = typeof app.gWI === 'function' ? app.gWI() : 0;
+    wi = wi >= 0 ? wi : 0;
+    var start = new Date(app.startDate[0], app.startDate[1], app.startDate[2]);
+    start.setDate(start.getDate() + wi * 7 + dayIdx(day));
+    return start;
+  }
+  function buildSelectedDayLocal(day, date){
+    return '<div class="selected-day-card"><div class="label">Dia selecionado</div><div class="value">' + esc(day) + ' · ' + fmtShortDate(date) + '</div></div>';
+  }
+  function splitPlusSafe(str){
+    var s = String(str || '');
+    var out = [], cur = '', depth = 0;
+    for (var i=0;i<s.length;i++){
+      var ch = s[i];
+      if(ch === '(') depth++;
+      if(ch === ')') depth = Math.max(0, depth-1);
+      if(ch === '+' && depth === 0){
+        if(cur.trim()) out.push(cur.trim());
+        cur = '';
+        continue;
+      }
+      cur += ch;
+    }
+    if(cur.trim()) out.push(cur.trim());
+    return out.map(function(x){ return x.replace(/^[:\s]+|[\s]+$/g,''); }).filter(Boolean);
+  }
+  function recipeLabel(food){
+    var s = String(food || '');
+    if(/^MARMITA\s+Yakisoba:/i.test(s)) return '🍜 Yakisoba para levar';
+    if(/^MARMITA:/i.test(s)) return '🍱 Marmita pronta';
+    var names = [
+      ['Wrap','🌯 Wrap'],['Crepioca','🫓 Crepioca'],['Omelete','🍳 Omelete'],['Panqueca','🥞 Panqueca'],['French toast','🍞 French toast'],
+      ['Vitamina','🥤 Vitamina'],['Escondidinho','🥘 Escondidinho'],['Yakisoba','🍜 Yakisoba'],['Pizza caseira','🍕 Pizza caseira'],
+      ['Hambúrguer','🍔 Hambúrguer'],['Sopa','🍲 Sopa'],['Canja','🍲 Canja'],['Risoto','🍚 Risoto'],['Estrogonofe','🍛 Estrogonofe']
+    ];
+    for (var i=0;i<names.length;i++){
+      if(new RegExp(names[i][0],'i').test(s)) return names[i][1];
+    }
+    return '';
+  }
+  function stripRecipePrefix(food){
+    var s = String(food || '');
+    if(/^MARMITA\s+Yakisoba:/i.test(s)) return s.replace(/^MARMITA\s+Yakisoba:\s*/i,'');
+    if(/^MARMITA:/i.test(s)) return s.replace(/^MARMITA:\s*/i,'');
+    return s;
+  }
+  function extractPortableParts(food, mealName){
+    var label = recipeLabel(food);
+    var clean = stripRecipePrefix(food);
+    var salad = '';
+    var saladMatch = clean.match(/Salada:[\s\S]*$/i);
+    if (saladMatch){
+      salad = saladMatch[0];
+      clean = clean.slice(0, saladMatch.index).replace(/\s*\+\s*$/,'').trim();
+    }
+    var parts = splitPlusSafe(clean);
+    var main = [], side = [], extra = [], drink = [];
+    var mealText = String(mealName || '').toLowerCase();
+
+    parts.forEach(function(item, idx){
+      var txt = item.toLowerCase();
+      var isDrink = /\b(leite|café|chá|suco|água)\b/.test(txt) || /^\d+\s*ml\b/.test(txt);
+      var isFruit = /\b(banana|maçã|pera|laranja|morango|mamão|abacaxi|uva)\b/.test(txt);
+      var isSauce = /molho|shoyu|requeijão|creme|mostarda|mel|barbecue|páprica|ervas|curry|queijo|muçarela|parmesão|limão|alcaparras|tomate seco|vinagrete|catupiry/i.test(txt);
+      var isCarb = /\b(arroz|macarrão|batata|purê|lentilha|feijão|mandioca|farofa|tapioca|pão|tortilha|far\.?\s*arroz)\b/.test(txt);
+      var isProtein = /\b(frango|sobrecoxa|carne|tilápia|merluza|ovo|patinho|músculo|maminha|presunto|peru|whey|iogurte|queijo minas)\b/.test(txt);
+      if (isDrink) drink.push(item);
+      else if (/^MARMITA/i.test(String(food || ''))){
+        if (isSauce) extra.push(item);
+        else if (isProtein || idx === 0) main.push(item);
+        else side.push(item);
+      } else if (/lanche|ceia/.test(mealText)){
+        if (isSauce) extra.push(item);
+        else if (isProtein && !isFruit) main.push(item);
+        else side.push(item);
+      } else if (/café/.test(mealText)){
+        if (isSauce) extra.push(item);
+        else if (isFruit || isDrink || isCarb) side.push(item);
+        else main.push(item);
+      } else {
+        if (isSauce) extra.push(item);
+        else if (isProtein || idx === 0) main.push(item);
+        else side.push(item);
+      }
+    });
+
+    if (!main.length && parts.length){
+      main.push(parts[0]);
+      parts.slice(1).forEach(function(p){ side.push(p); });
+    }
+
+    return {label:label, main:main, side:side, extra:extra, drink:drink, salad:salad};
+  }
+  function containerHint(parsed, meal){
+    var packs = [];
+    var mealName = String(meal && meal.name || '').toLowerCase();
+    if (parsed.main.length || parsed.side.length) packs.push(/^marmita/i.test(String(meal && meal.food || '')) ? 'pote principal' : 'pote/embalagem principal');
+    if (parsed.extra.length || parsed.salad) packs.push('pote pequeno');
+    if (parsed.drink.length || /whey|vitamina|leite/.test(String(meal && meal.food || '').toLowerCase())) packs.push('garrafinha ou shakeira');
+    if (!packs.length && /ceia/.test(mealName)) packs.push('shakeira');
+    return packs.length ? packs.join(' + ') : 'consumir na hora';
+  }
+  function mealKind(meal){
+    var food = String(meal && meal.food || '');
+    var name = String(meal && meal.name || '');
+    if (/^MARMITA/i.test(food)) return 'Marmita';
+    if (/ceia|whey/i.test(name)) return 'Ceia / shake';
+    if (/lanche/i.test(name)) return 'Lanche';
+    if (/café/i.test(name)) return 'Café / manhã';
+    if (/jantar/i.test(name)) return 'Jantar';
+    return 'Refeição';
+  }
+  function portableSummary(meal){
+    var p = extractPortableParts(meal.food, meal.name);
+    var top = [].concat(p.main, p.side).slice(0,2);
+    if (!top.length) top = splitPlusSafe(stripRecipePrefix(meal.food)).slice(0,2);
+    return top.join(' · ') || String(meal.food || '');
+  }
+  function buildRows(list, blockClass){
+    return '<div class="pack-block ' + blockClass + '"><div class="pack-block-label">' +
+      (blockClass === 'main' ? 'Vai no pote principal' : blockClass === 'side' ? 'Vai junto / acompanhamento' : blockClass === 'extra' ? 'Separar à parte' : 'Bebida / shake') +
+      '</div><div class="pack-list">' + list.map(function(item){ return '<div class="pack-row"><div class="pack-dot"></div><span>' + esc(item) + '</span></div>'; }).join('') + '</div></div>';
+  }
+  function buildPortableMeal(meal){
+    var p = extractPortableParts(meal.food, meal.name);
+    var blocks = '';
+    if (p.main.length) blocks += buildRows(p.main, 'main');
+    if (p.side.length) blocks += buildRows(p.side, 'side');
+    if (p.extra.length) blocks += buildRows(p.extra, 'extra');
+    if (p.drink.length) blocks += buildRows(p.drink, 'drink');
+    if (!blocks) blocks = '<div class="pack-block main"><div class="pack-block-label">Montagem</div><div class="pack-list"><div class="pack-row"><div class="pack-dot"></div><span>' + esc(meal.food) + '</span></div></div></div>';
+    var out = '<div class="meal-pack">';
+    out += '<div class="meal-pack-top"><span class="pack-chip kind">📌 ' + esc(mealKind(meal)) + '</span><span class="pack-chip boxes">🧊 Separar em: ' + esc(containerHint(p, meal)) + '</span>' + (p.label ? '<span class="pack-chip">' + esc(p.label) + '</span>' : '') + '</div>';
+    out += '<div class="pack-grid">' + blocks + '</div>';
+    if (p.salad) out += '<div class="pack-salad">🥗 ' + esc(p.salad) + '</div>';
+    out += '<details class="portable-raw"><summary>Ver composição completa</summary>' + (typeof fmtF === 'function' ? fmtF(meal.food) : ('<div style="font-size:13px;color:var(--ts)">' + esc(meal.food) + '</div>')) + '</details>';
+    out += '</div>';
+    return out;
+  }
+  function buildAssemblyBoard(meals){
+    var groups = {
+      marmitas: {title:'🍱 Marmitas do dia', items:[]},
+      lanches: {title:'🥪 Lanches para levar', items:[]},
+      hora: {title:'⏱️ Montar na hora', items:[]}
+    };
+    (meals || []).forEach(function(meal){
+      var target = groups.hora;
+      if (/^MARMITA/i.test(String(meal.food || '')) || /almoço|jantar/i.test(String(meal.name || '').toLowerCase())) target = groups.marmitas;
+      if (/lanche|ceia|whey/i.test(String(meal.name || '').toLowerCase())) target = groups.lanches;
+      if (/café/i.test(String(meal.name || '').toLowerCase())) target = groups.hora;
+      target.items.push(meal);
+    });
+    var order = ['marmitas','lanches','hora'];
+    return '<div class="assembly-board">' + order.map(function(key){
+      var group = groups[key];
+      var body = group.items.length ? '<div class="assembly-list">' + group.items.map(function(meal){ return '<div class="assembly-item"><div class="assembly-time">' + esc(meal.time) + '</div><div class="assembly-text"><strong>' + esc(meal.name) + '</strong><span>' + esc(portableSummary(meal)) + '</span></div></div>'; }).join('') + '</div>' : '<div class="assembly-empty">Sem itens nesta faixa.</div>';
+      return '<div class="assembly-card"><h3><span>' + group.title + '</span><span class="assembly-count">' + group.items.length + ' item(ns)</span></h3>' + body + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function prepGroup(item){
+    var txt = [item && item.item, item && item.modo, item && item.dest].join(' ').toLowerCase();
+    if (/frango|sobrecoxa|carne|tilápia|merluza|peixe|patinho|maminha|músculo|ovo/.test(txt)) return 'Proteínas para marmitas';
+    if (/arroz|macarrão|batata|purê|mandioca|lentilha|feijão|farofa/.test(txt)) return 'Bases da marmita';
+    if (/iogurte|whey|queijo|muçarela|presunto|peru|pão|tapioca|tortilha|leite/.test(txt)) return 'Lanches e cafés';
+    if (/molho|shoyu|mostarda|curry|páprica|barbecue|tempero|ervas|requeijão|creme|mel|agave|vinagrete|salada|banana|morango|maçã|pera|laranja|fruta/.test(txt)) return 'Complementos e apoio';
+    return 'Outros da semana';
+  }
+  function prepFlow(list){
+    var seen = [];
+    (list || []).forEach(function(item){
+      var g = prepGroup(item);
+      if (seen.indexOf(g) === -1) seen.push(g);
+    });
+    return seen.map(function(label, idx){ return '<span class="prep-flow-step">' + (idx+1) + '. ' + esc(label) + '</span>'; }).join('');
+  }
+  function titleFromPrep(item){ return String(item || '').split('(')[0].trim(); }
+  function qtyFromPrep(item){ var m = String(item || '').match(/\(([^)]+)\)/); return m ? m[1].trim() : ''; }
+  function splitDest(dest){ return String(dest || '').split(/\s*[·+]|\s{2,}|\s+\|\s+/).map(function(x){ return x.trim(); }).filter(Boolean); }
+  function iconForPrep(title){
+    var t = String(title || '').toLowerCase();
+    if(/frango|sobrecoxa/.test(t)) return '🍗';
+    if(/carne|patinho|músculo|maminha|bife|hambúrguer/.test(t)) return '🥩';
+    if(/tilápia|merluza|peixe/.test(t)) return '🐟';
+    if(/arroz/.test(t)) return '🍚';
+    if(/macarrão/.test(t)) return '🍝';
+    if(/batata|purê|mandioca/.test(t)) return '🥔';
+    if(/feijão|lentilha/.test(t)) return '🫘';
+    if(/molho|shoyu|mostarda|curry|tempero|ervas|barbecue|creme|requeijão/.test(t)) return '🧂';
+    if(/salada|vinagrete|banana|morango|maçã|pera|laranja|fruta/.test(t)) return '🥗';
+    if(/pão|tapioca|tortilha|whey|iogurte|queijo|muçarela|presunto|peru|leite/.test(t)) return '🥪';
+    return '📦';
+  }
+  function renderPrepGrouped(list, note){
+    var groups = {};
+    (list || []).forEach(function(item){
+      var g = prepGroup(item);
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(item);
+    });
+    var order = ['Proteínas para marmitas','Bases da marmita','Lanches e cafés','Complementos e apoio','Outros da semana'];
+    var h = '';
+    if (note && note.length) h += '<div class="prep-note"><strong>Rodízio da semana:</strong> ' + note.map(esc).join(' · ') + '.</div>';
+    if (list && list.length) h += '<div class="prep-flow">' + prepFlow(list) + '</div>';
+    h += '<div class="prep-list">';
+    order.forEach(function(groupName){
+      var arr = groups[groupName] || [];
+      if (!arr.length) return;
+      h += '<div class="prep-group"><div class="prep-group-title"><span>' + esc(groupName) + '</span><span class="prep-group-count">' + arr.length + ' item(ns)</span></div><div class="prep-list">';
+      arr.forEach(function(item){
+        var title = titleFromPrep(item.item);
+        var qty = qtyFromPrep(item.item);
+        h += '<div class="prep-card"><div class="prep-card-h"><div class="prep-card-title">' + iconForPrep(title) + ' ' + esc(title) + '</div>' + (qty ? '<div class="prep-card-qty">' + esc(qty) + '</div>' : '') + '</div>';
+        h += '<div class="prep-card-grid"><div class="prep-block"><div class="prep-block-label">Preparar assim</div><div class="prep-block-val">' + esc(item.modo || '—') + '</div></div><div class="prep-block"><div class="prep-block-label">Fracionar / usar em</div><div class="prep-block-val">' + esc(item.dest || '—') + '</div></div></div>';
+        var dests = splitDest(item.dest);
+        if (dests.length) h += '<div class="prep-dest-list">' + dests.map(function(d){ return '<span class="prep-dest-chip">📍 ' + esc(d) + '</span>'; }).join('') + '</div>';
+        h += '</div>';
+      });
+      h += '</div></div>';
+    });
+    h += '</div>';
+    return h;
+  }
+  function aggregatePrepPortable(listA, ownerA, listB, ownerB){
+    var map = {};
+    function add(list, owner){
+      (list || []).forEach(function(item){
+        var title = titleFromPrep(item.item);
+        var key = title.toLowerCase();
+        var qty = qtyFromPrep(item.item);
+        var raw = 0, cooked = 0;
+        var m = qty.match(/(\d+)g[^\d]*(?:→\s*≈?(\d+)g)?/i);
+        if (m){ raw = parseInt(m[1],10) || 0; cooked = parseInt(m[2],10) || 0; }
+        if (!map[key]) map[key] = {title:title, raw:0, cooked:0, group:prepGroup(item), rows:[]};
+        map[key].raw += raw;
+        map[key].cooked += cooked;
+        map[key].rows.push({owner:owner, modo:item.modo || '', dest:item.dest || '', qty:qty});
+      });
+    }
+    add(listA, ownerA); add(listB, ownerB);
+    return Object.keys(map).sort().map(function(k){ return map[k]; });
+  }
+
+  function normalizeShopName(name){
+    return String(name || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,' ')
+      .trim();
+  }
+  function parseQtyLabel(raw){
+    var text = String(raw || '').trim();
+    var m = text.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+    if (m) return {name:m[1].trim(), qty:m[2].trim()};
+    return {name:text, qty:''};
+  }
+  function useGroup(name, category){
+    var txt = (String(name || '') + ' ' + String(category || '')).toLowerCase();
+    if (/frango|carne|tilápia|merluza|músculo|maminha|patinho|arroz|macarrão|batata|mandioca|lentilha|feijão|farofa|molho tomate/.test(txt)) return 'Marmitas';
+    if (/iogurte|whey|leite|muçarela|queijo|requeijão|pão|tapioca|tortilha|ovos|presunto|peru/.test(txt)) return 'Lanches e cafés';
+    if (/banana|maçã|pera|laranja|morango|fruta/.test(txt)) return 'Frutas e frescos';
+    return 'Molhos e apoio';
+  }
+  function flattenShop(list){
+    var items = [];
+    (list || []).forEach(function(section){
+      String(section.text || '').split(' · ').map(function(piece){ return piece.trim(); }).filter(Boolean).forEach(function(piece){
+        var parsed = parseQtyLabel(piece);
+        items.push({
+          name: parsed.name,
+          qty: parsed.qty,
+          category: section.cat || 'Outros',
+          group: useGroup(parsed.name, section.cat || '')
+        });
+      });
+    });
+    return items;
+  }
+  function aggregateShop(listA, listB){
+    var map = {};
+    function add(list, owner){
+      flattenShop(list).forEach(function(item){
+        var key = normalizeShopName(item.name) + '|' + item.qty.replace(/\s+/g,' ').trim().replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi,'');
+        if (!map[key]) map[key] = {name:item.name, qty:item.qty, categories:{}, groups:{}, owners:{}};
+        map[key].categories[item.category] = true;
+        map[key].groups[item.group] = true;
+        map[key].owners[owner] = true;
+      });
+    }
+    add(listA, 'A'); add(listB, 'B');
+    return Object.keys(map).map(function(k){
+      var item = map[k];
+      return {
+        name:item.name,
+        qty:item.qty,
+        category:Object.keys(item.categories).join(' · '),
+        group:Object.keys(item.groups)[0] || 'Molhos e apoio',
+        owners:Object.keys(item.owners).length
+      };
+    });
+  }
+  function buildShopSummary(items){
+    var counts = {marmitas:0, lanches:0, outros:0};
+    items.forEach(function(item){
+      if (item.group === 'Marmitas') counts.marmitas++;
+      else if (item.group === 'Lanches e cafés' || item.group === 'Frutas e frescos') counts.lanches++;
+      else counts.outros++;
+    });
+    return '<div class="shop-summary">' +
+      '<div class="shop-summary-card"><div class="top"><strong>🍱 Base das marmitas</strong><span class="shop-item-qty">' + counts.marmitas + ' itens</span></div><span>Proteínas, carboidratos e bases mais ligadas às refeições principais.</span></div>' +
+      '<div class="shop-summary-card"><div class="top"><strong>🥪 Lanches e apoio</strong><span class="shop-item-qty">' + counts.lanches + ' itens</span></div><span>Itens práticos para lancheira, café da manhã, ceia e frutas.</span></div>' +
+      '<div class="shop-summary-card"><div class="top"><strong>🧂 Finalização</strong><span class="shop-item-qty">' + counts.outros + ' itens</span></div><span>Molhos, temperos e complementos usados na semana.</span></div>' +
+    '</div>';
+  }
+  function renderShopPortable(items, prefix){
+    var groups = {};
+    items.forEach(function(item){
+      if (!groups[item.group]) groups[item.group] = [];
+      groups[item.group].push(item);
+    });
+    var order = ['Marmitas','Lanches e cafés','Frutas e frescos','Molhos e apoio'];
+    var h = buildShopSummary(items);
+    h += '<div class="shop-groups">';
+    order.forEach(function(groupName){
+      var arr = groups[groupName] || [];
+      if (!arr.length) return;
+      h += '<div class="shop-group"><div class="shop-group-h"><strong>' + esc(groupName) + '</strong><span>' + arr.length + ' item(ns)</span></div><div class="shop-grid">';
+      arr.forEach(function(item, idx){
+        var id = prefix + '_' + groupName.replace(/\W+/g,'_') + '_' + idx;
+        h += '<label class="shop-item-card" for="' + id + '"><input type="checkbox" id="' + id + '"><div class="shop-item-main"><div class="shop-item-top"><div class="shop-item-name">' + esc(item.name) + '</div>' + (item.qty ? '<div class="shop-item-qty">' + esc(item.qty) + '</div>' : '') + '</div><div class="shop-item-meta"><span class="shop-item-tag">' + esc(item.group) + '</span>' + (item.category ? '<span class="shop-item-tag">' + esc(item.category) + '</span>' : '') + '</div></div></label>';
+      });
+      h += '</div></div>';
+    });
+    h += '</div>';
+    return h;
+  }
+
+  if (window.NutritionApp && window.NutritionApp.prototype){
+    NutritionApp.prototype.renderD = function(){
+      var meals = this.W[this.cW] && this.W[this.cW].days && this.W[this.cW].days[this.cD];
+      var el = document.getElementById(this.px + '-dContent');
+      if (!el) return;
+      if (!meals) { el.innerHTML = '<p>Sem dados</p>'; return; }
+      var tk = meals.reduce(function(sum, meal){ return sum + (meal.kcal || 0); }, 0);
+      var tp = meals.reduce(function(sum, meal){ return sum + (meal.prot || 0); }, 0);
+      var selectedDate = getCardDateLocal(this, this.cD);
+      var h = buildSelectedDayLocal(this.cD, selectedDate);
+      h += buildAssemblyBoard(meals);
+      h += '<div class="day-total"><span>🔥 ' + tk + ' kcal</span><span>💪 ' + tp + 'g prot</span></div>';
+      var self = this;
+      meals.forEach(function(meal){
+        var meds = typeof self.getMedsForTime === 'function' ? self.getMedsForTime(meal.time, meal.name) : '';
+        h += '<div class="meal ' + (typeof gMC === 'function' ? gMC(meal.name) : '') + '"><div class="meal-h"><div><span class="meal-t">' + esc(meal.time) + '</span></div><div class="badges"><span class="badge badge-k">' + esc(meal.kcal) + ' kcal</span><span class="badge badge-p">' + esc(meal.prot) + 'g P</span></div></div><div class="meal-n">' + esc(meal.name) + '</div>';
+        h += buildPortableMeal(meal);
+        if (meds) h += '<div class="mmeds">' + meds + '</div>';
+        h += '<details class="meal-subs"><summary>Opções de Troca</summary><div class="sub"><strong>Opção 2:</strong> ' + esc(meal.sub1 || 'Sem substituição') + '</div>' +
+             '<div class="sub" style="' + ((meal.sub2 && meal.sub2 !== 'Sem substituição') ? '' : 'display:none') + '"><strong>Opção 3:</strong> ' + esc(meal.sub2 || '') + '</div></details></div>';
+      });
+      el.innerHTML = h;
+    };
+
+    NutritionApp.prototype.renderPr = function(){
+      var el = document.getElementById(this.px + '-prepC');
+      if (!el) return;
+      var myWeek = this.W[this.cW] || {};
+      var myPrep = myWeek.prep || [];
+      var otherApp = this.px === 'r' ? (typeof M !== 'undefined' ? M : window.M) : (typeof R !== 'undefined' ? R : window.R);
+      var otherW = this.px === 'r' ? (typeof M_W !== 'undefined' ? M_W : window.M_W) : (typeof R_W !== 'undefined' ? R_W : window.R_W);
+      var otherName = this.px === 'r' ? 'Marlene' : 'Rodrigo';
+      var myName = this.px === 'r' ? 'Rodrigo' : 'Marlene';
+      var otherCardType = otherApp ? otherApp.cW : Object.keys(otherW || {})[0];
+      var otherWeek = (otherW && otherW[otherCardType]) || {};
+      var otherPrep = otherWeek.prep || [];
+      var combined = aggregatePrepPortable(myPrep, myName, otherPrep, otherName);
+      var h = '';
+      h += '<div class="prep-section"><div class="prep-header open" onclick="togglePrep(this)"><span>👨‍🍳 Meal Prep — ' + myName + ' (Cardápio ' + esc(this.cW) + ')</span><span class="chevron">▼</span></div><div class="prep-body open">';
+      h += renderPrepGrouped(myPrep, myWeek.__carbRotation || []);
+      h += '</div></div>';
+      h += '<div class="prep-section"><div class="prep-header" onclick="togglePrep(this)"><span>👩‍🍳 Meal Prep — ' + otherName + ' (Cardápio ' + esc(otherCardType || '') + ')</span><span class="chevron">▼</span></div><div class="prep-body">';
+      h += renderPrepGrouped(otherPrep, otherWeek.__carbRotation || []);
+      h += '</div></div>';
+      h += '<div class="prep-section"><div class="prep-header" onclick="togglePrep(this)"><span>📊 Soma organizada — ' + myName + ' + ' + otherName + '</span><span class="chevron">▼</span></div><div class="prep-body">';
+      h += '<div class="prep-note"><strong>Visão de montagem:</strong> total agrupado para facilitar o fracionamento das marmitas, lanches e bases da semana.</div>';
+      h += '<div class="prep-list">';
+      combined.forEach(function(item){
+        h += '<div class="prep-card prep-combined"><div class="prep-card-h"><div class="prep-card-title">' + iconForPrep(item.title) + ' ' + esc(item.title) + '</div><div class="prep-card-qty">' + (item.raw ? esc(item.raw + 'g cru') : 'sem peso') + (item.cooked ? ' → ≈' + esc(item.cooked + 'g') : '') + '</div></div>';
+        h += '<div class="prep-block"><div class="prep-block-label">Distribuição por pessoa</div>';
+        item.rows.forEach(function(row){
+          h += '<div class="prep-person-row"><strong>' + esc(row.owner) + ':</strong> ' + esc(row.modo || '—') + '<br><span style="color:var(--tmu)">→ ' + esc(row.dest || '—') + '</span></div>';
+        });
+        h += '</div></div>';
+      });
+      h += '</div></div></div>';
+      el.innerHTML = h;
+    };
+
+    NutritionApp.prototype.renderSh = function(){
+      var el = document.getElementById(this.px + '-shopC');
+      if (!el) return;
+      var myWeek = this.W[this.cW] || {};
+      var myShop = myWeek.shop || [];
+      var otherApp = this.px === 'r' ? (typeof M !== 'undefined' ? M : window.M) : (typeof R !== 'undefined' ? R : window.R);
+      var otherW = this.px === 'r' ? (typeof M_W !== 'undefined' ? M_W : window.M_W) : (typeof R_W !== 'undefined' ? R_W : window.R_W);
+      var myName = this.px === 'r' ? 'Rodrigo' : 'Marlene';
+      var otherName = this.px === 'r' ? 'Marlene' : 'Rodrigo';
+      var otherCardType = otherApp ? otherApp.cW : Object.keys(otherW || {})[0];
+      var otherWeek = (otherW && otherW[otherCardType]) || {};
+      var otherShop = otherWeek.shop || [];
+      var myFlat = flattenShop(myShop);
+      var otherFlat = flattenShop(otherShop);
+      var combined = aggregateShop(myShop, otherShop);
+      var h = '';
+      h += '<div class="prep-section"><div class="prep-header open" onclick="togglePrep(this)"><span>🛒 ' + myName + ' (Cardápio ' + esc(this.cW) + ')</span><span class="chevron">▼</span></div><div class="prep-body open">';
+      h += renderShopPortable(myFlat, this.px + '_mine');
+      h += '</div></div>';
+      h += '<div class="prep-section"><div class="prep-header" onclick="togglePrep(this)"><span>🛒 ' + otherName + ' (Cardápio ' + esc(otherCardType || '') + ')</span><span class="chevron">▼</span></div><div class="prep-body">';
+      h += renderShopPortable(otherFlat, this.px + '_other');
+      h += '</div></div>';
+      h += '<div class="prep-section"><div class="prep-header" onclick="togglePrep(this)"><span>📦 Compra combinada — ' + myName + ' + ' + otherName + '</span><span class="chevron">▼</span></div><div class="prep-body">';
+      h += '<div class="shop-note"><strong>Lista sincronizada com o cardápio:</strong> agrupada por uso prático para facilitar compras de marmita, lancheira e itens de apoio, sem remover nenhuma informação original.</div>';
+      h += renderShopPortable(combined, this.px + '_combined');
+      h += '</div></div>';
+      el.innerHTML = h;
+    };
+  }
+
+  try {
+    if (typeof R !== 'undefined' && typeof R.renderW === 'function') R.renderW();
+    if (typeof M !== 'undefined' && typeof M.renderW === 'function') M.renderW();
+  } catch (e) {}
+})();
+</script>
+
 </body>
 </html>
