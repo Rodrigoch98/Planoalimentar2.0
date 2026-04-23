@@ -6063,276 +6063,181 @@ NutritionApp.prototype.renderD = function(){
   if(typeof window.i_renderEx === 'function') window.i_renderEx();
   if(typeof window.rf_renderEx === 'function') window.rf_renderEx();
 })();
+</script>
+
 
 <script>
-// ================= V7 PATCH: stage-specific equipment + MBX-safe swaps + timer equipment visibility =================
 (function(){
-  function hardClone(obj){
-    try { return JSON.parse(JSON.stringify(obj || {})); } catch(e){ return obj ? Object.assign({}, obj) : {}; }
+  var extraStyle = document.createElement('style');
+  extraStyle.id = 'mbx-timer-patch';
+  extraStyle.textContent = `
+    .wm-equip-line{
+      font-size:12px;
+      color:var(--tm);
+      font-weight:700;
+      margin:10px 0 12px;
+      padding:10px 12px;
+      background:var(--bg);
+      border-radius:10px;
+      border:1px solid var(--bd);
+      line-height:1.5;
+      text-align:left;
+    }
+    .wm-equip-line .label{
+      color:var(--pd);
+      margin-right:6px;
+    }
+  `;
+  document.head.appendChild(extraStyle);
+
+  function cloneObjSafe(v){
+    try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}
   }
-  function safeEsc(v){ return typeof esc === 'function' ? esc(v == null ? '' : String(v)) : String(v == null ? '' : v); }
-  function pickWeight(text, kind){
-    text = (text || '').toLowerCase();
-    var found = [];
-    [3,5,6,7,8,10,15].forEach(function(n){
-      var re = new RegExp('(?:'+n+'\\s*kg|'+n+'kg)');
-      if(re.test(text)) found.push(n + 'kg');
-    });
-    if(!found.length) return kind;
-    return kind + ' ' + found.join('/');
-  }
-  function inferExerciseEquipmentDetailed(ex){
-    var text = [ex && ex.name || '', Array.isArray(ex && ex.steps) ? ex.steps.join(' ') : '', ex && ex.tip || ''].join(' ').toLowerCase();
+  function norm(v){ return String(v || '').toLowerCase(); }
+  function uniquePush(arr, item){ if(item && arr.indexOf(item) === -1) arr.push(item); }
+
+  function inferExerciseEquipmentPrecise(ex){
+    if(ex && ex.equip) return ex.equip;
+    var text = [
+      ex && ex.name || '',
+      Array.isArray(ex && ex.steps) ? ex.steps.join(' ') : '',
+      ex && ex.tip || ''
+    ].join(' ').toLowerCase();
     var items = [];
-    function add(v){ if(v && items.indexOf(v) === -1) items.push(v); }
 
-    if(/bike|bicicleta|pedal|pedale|spinning/.test(text)) add('Bicicleta');
-    if(/chest press|press sentado na estação|press sentado na estacao/.test(text)) add('Estação MBX · chest press');
-    else if(/voador|peck deck|pec deck/.test(text)) add('Estação MBX · voador');
-    else if(/puxada alta/.test(text)) add('Estação MBX · puxador alto');
-    else if(/remada baixa/.test(text)) add('Estação MBX · polia baixa');
-    else if(/tríceps na polia|triceps na polia/.test(text)) add('Estação MBX · polia alta');
-    else if(/extensora/.test(text)) add('Estação MBX · cadeira extensora');
-    else if(/rosca scott|scott/.test(text)) add('Estação MBX · apoio scott');
+    if(/bike|bicicleta|spinning|pedal|pedale/.test(text)) uniquePush(items, 'Bicicleta');
+    if(/chest press|voador|peitoral .*estação|peitoral .*estacao|tríceps na polia|triceps na polia|puxada alta|remada baixa|polia alta|polia baixa|extensora|rosca scott/.test(text)) uniquePush(items, 'Estação MBX');
+    if(/halter|haltere|supino|remada unilateral|rosca alternada|rosca martelo|desenvolvimento sentado|tríceps acima|triceps acima|crucifixo/.test(text)) uniquePush(items, 'Halteres');
+    if(/kettlebell|goblet/.test(text)) uniquePush(items, 'Kettlebell');
+    if(/mini band/.test(text)) uniquePush(items, 'Mini band');
+    if(/super band|elástico|elastico/.test(text)) uniquePush(items, 'Super band');
+    if(/caneleira/.test(text)) uniquePush(items, 'Caneleiras');
+    if(/step/.test(text)) uniquePush(items, 'Step');
+    if(/banco|hip thrust|prancha inclinada|sentar e levantar/.test(text)) uniquePush(items, 'Banco');
+    if(/tapete|dead bug|ponte|prancha|deite|deitado|alongamento|mobilidade/.test(text)) uniquePush(items, 'Tapete');
 
-    if(/mini band/.test(text)) add('Mini band');
-    if(/super band/.test(text)) add('Super band');
-    if(/caneleira/.test(text)) add('Caneleiras');
-    if(/step/.test(text)) add('Step');
-    if(/tapete|deitado|deite|prancha|ponte|dead bug|respiraç|respirac|alongamento no chão|alongamento no chao/.test(text)) add('Tapete');
-    if(/banco|encosto|apoie as costas no banco|apoio no banco|prancha inclinada/.test(text)) add('Banco ajustável');
-    if(/halter|haltere|supino|rosca|desenvolvimento|elevação lateral|elevacao lateral|tríceps acima|triceps acima|crucifixo|romeno com halteres/.test(text)) add(pickWeight(text, 'Halteres'));
-    if(/kettlebell|goblet/.test(text)) add(pickWeight(text, 'Kettlebell'));
-    if(/peso do corpo|sem equipamento|marcha no lugar|caminhada|caminhe/.test(text) && !items.length) add('Peso do corpo');
-    if(!items.length) add('Peso do corpo');
-    return items.join(' + ');
+    if(/sem equipamento|peso do corpo|marcha no lugar|respiração|respiracao|caminhe|caminhada/.test(text) && !items.length){
+      uniquePush(items, 'Peso do corpo');
+    }
+    if(!items.length) uniquePush(items, 'Peso do corpo');
+    return items.join(' · ');
   }
 
-  function collectWorkoutEquipment(exercises){
-    var out = [];
-    function add(v){ if(v && out.indexOf(v) === -1) out.push(v); }
-    (exercises || []).forEach(function(ex){
-      inferExerciseEquipmentDetailed(ex).split(/\s*\+\s*/).forEach(add);
-    });
-    return out.join(' · ');
+  function mbxSanitizeExercise(person, ex){
+    var out = cloneObjSafe(ex || {});
+    var text = [out.name || '', Array.isArray(out.steps) ? out.steps.join(' ') : '', out.tip || ''].join(' ').toLowerCase();
+
+    if(/flexora|mesa flexora|dobrar o joelho/.test(text)){
+      out.name = 'Posterior de coxa no tapete';
+      out.reps = out.reps && out.reps !== '12 reps' ? out.reps : '12 reps por lado';
+      out.steps = [
+        'Deite de barriga para baixo no tapete e apoie a testa sobre as mãos para manter o pescoço relaxado.',
+        'Se estiver estável, use caneleira leve; se não estiver, faça apenas com o peso do corpo.',
+        'Dobre um joelho por vez aproximando o calcanhar do glúteo sem tirar o quadril do chão.',
+        'Desça devagar, troque de lado e mantenha o movimento curto, limpo e sem balanço.'
+      ];
+      out.tip = 'A MBX das fotos mostra extensora, mas a flexora dedicada não ficou clara. Por isso, este bloco foi trocado por uma variação compatível e mais segura.';
+      out.equip = 'Tapete · Caneleiras';
+      return out;
+    }
+
+    if(/desenvolvimento .*estação|ombro .*estação|pressão de ombro .*estação|pressao de ombro .*estacao/.test(text)){
+      out.name = 'Desenvolvimento sentado com halteres';
+      out.steps = [
+        'Sente no banco com o encosto quase vertical e os pés firmes no chão.',
+        'Use halteres leves e comece com as mãos na altura das orelhas.',
+        'Empurre para cima sem arquear a lombar e sem bater os halteres no topo.',
+        'Desça devagar até o antebraço ficar novamente em posição vertical.'
+      ];
+      out.tip = 'A estação MBX das fotos não mostra um módulo dedicado de ombro. Esta troca mantém o objetivo com execução mais coerente.';
+      out.equip = 'Banco · Halteres';
+      return out;
+    }
+
+    if(/remada alta na estação/.test(text)){
+      out.name = 'Remada baixa na estação';
+      out.steps = [
+        'Sente com o tronco alto e segure o acessório da polia baixa com pegada confortável.',
+        'Puxe em direção ao umbigo sem encolher os ombros.',
+        'Aproxime as escápulas no final do movimento.',
+        'Retorne devagar sem deixar a pilha bater.'
+      ];
+      out.tip = 'A polia baixa aparece com clareza na MBX enviada, então a remada baixa é a opção mais segura para esse bloco.';
+      out.equip = 'Estação MBX';
+      return out;
+    }
+
+    if(/puxada atrás|puxada atras/.test(text)){
+      out.name = 'Puxada alta sentada na estação';
+      out.steps = [
+        'Sente com o peito aberto e segure a barra acima da cabeça.',
+        'Puxe a barra para a frente do peito, sem levar atrás do pescoço.',
+        'Faça uma pausa curta na parte baixa.',
+        'Suba controlando a volta e sem jogar o tronco para trás.'
+      ];
+      out.tip = 'Na MBX, a puxada pela frente é a versão mais estável e coerente com o conjunto que aparece nas fotos.';
+      out.equip = 'Estação MBX';
+      return out;
+    }
+
+    out.equip = inferExerciseEquipmentPrecise(out);
+    return out;
   }
 
-  function adaptExerciseForMBX(person, ex){
-    var e = hardClone(ex);
-    var name = (e.name || '').toLowerCase();
-    if(/flexora/.test(name)){
-      if(person === 'marlene'){
-        e.name = 'Ponte de glúteos no tapete';
-        e.steps = [
-          'Deite no tapete, dobre os joelhos e apoie os pés no chão na largura do quadril.',
-          'Suba o quadril apertando glúteos e posterior de coxa, sem jogar a barriga para cima.',
-          'Segure 2 segundos no alto e desça devagar, vértebra por vértebra.',
-          'Se ficar leve, faça pausa maior no topo em vez de acelerar o movimento.'
-        ];
-        e.tip = 'Troca mais segura para posterior e glúteos sem depender de um módulo que não aparece com clareza nas fotos da estação.';
-      } else if(person === 'ivo'){
-        e.name = 'Levantamento romeno com halteres';
-        e.steps = [
-          'Fique em pé com um halter em cada mão, braços ao lado do corpo e joelhos levemente destravados.',
-          'Leve o quadril para trás e desça os halteres perto das pernas, mantendo peito aberto e costas neutras.',
-          'Pare quando sentir alongar a parte de trás das coxas, sem arredondar a lombar.',
-          'Suba apertando glúteos e posterior, sem tranco e sem prender a respiração.'
-        ];
-        e.tip = 'Substituição objetiva para posterior de coxa sem depender de flexora dedicada.';
-      } else {
-        e.name = 'Levantamento romeno com halteres';
-        e.steps = [
-          'Fique em pé com um halter em cada mão e mantenha o abdômen firme.',
-          'Empurre o quadril para trás e desça os halteres rente às pernas, com coluna neutra.',
-          'Desça só até onde conseguir manter controle e alongamento na parte de trás das coxas.',
-          'Suba com força nos glúteos, sem jogar o tronco para trás.'
-        ];
-        e.tip = 'Troca direta para trabalhar posterior de coxa com equipamento que está claramente disponível.';
+  window.inferExerciseEquipment = inferExerciseEquipmentPrecise;
+
+  if(typeof window.getProcessedWorkout === 'function'){
+    var oldGetProcessedWorkout = window.getProcessedWorkout;
+    window.getProcessedWorkout = function(person, workout, ctx){
+      var processed = oldGetProcessedWorkout(person, workout, ctx);
+      if(!processed || !processed.workout) return processed;
+      if(processed.workout.focus){
+        processed.workout.focus = processed.workout.focus
+          .replace(/extensora\/?flexora/gi, 'extensora e posterior fora da estação')
+          .replace(/flexora/gi, 'posterior fora da estação');
       }
-    }
-    return e;
+      if(Array.isArray(processed.workout.exercises)){
+        processed.workout.exercises = processed.workout.exercises.map(function(ex){
+          return mbxSanitizeExercise(person, ex);
+        });
+      }
+      return processed;
+    };
   }
 
-  window.inferExerciseEquipment = inferExerciseEquipmentDetailed;
-  try { inferExerciseEquipment = inferExerciseEquipmentDetailed; } catch(e) {}
-
-  window.getProcessedWorkout = function(person, workout, ctx){
-    var windowInfo = typeof getEquipmentWindowInfo === 'function' ? getEquipmentWindowInfo() : {mode:'unknown'};
-    if(!workout) return {workout:null, window:windowInfo};
-    var w = typeof cloneObj === 'function' ? cloneObj(workout) : hardClone(workout);
-    w.exercises = (w.exercises || []).map(function(ex){
-      var transformed = typeof transformExerciseByWindow === 'function'
-        ? transformExerciseByWindow(person, ex, {mode:windowInfo.mode, day:ctx && ctx.day, phase:ctx && ctx.phase})
-        : ex;
-      return adaptExerciseForMBX(person, transformed);
-    });
-    w.equip = collectWorkoutEquipment(w.exercises);
-    return {workout:w, window:windowInfo};
-  };
-  try { getProcessedWorkout = window.getProcessedWorkout; } catch(e) {}
-
-  function buildExerciseCard(cfg, workout){
-    var isRest = cfg.getDay() === 'Domingo' || (workout.time || '') === '—';
-    var eh = '<div class="ex-card ' + (isRest ? 'rest' : '') + '"><div class="ex-card-h"><div><div class="ex-card-n">' + safeEsc(workout.title) + '</div><div style="font-size:12px;color:var(--ts);margin-top:2px">' + safeEsc(workout.focus || '') + '</div></div><div class="ex-card-t">⏱ ' + safeEsc(workout.time || '—') + '</div></div>';
-    (workout.exercises || []).forEach(function(ex){
-      var exEquip = inferExerciseEquipmentDetailed(ex);
-      eh += '<div class="ex-item"><div class="ex-item-h"><div class="ex-item-name">' + safeEsc(ex.name) + '</div><div class="ex-item-badge">';
-      if(ex.sets && ex.sets !== '-') eh += '<span class="ex-item-b ex-b-sets">' + safeEsc(ex.sets) + '</span>';
-      if(ex.rest && ex.rest !== '-') eh += '<span class="ex-item-b ex-b-rest">⏸ ' + safeEsc(ex.rest) + '</span>';
-      eh += '</div></div>';
-      eh += '<div class="exercise-equipment-line" style="font-size:12px;font-weight:600;color:var(--pd);margin:0 0 10px;padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:10px"><span class="label" style="opacity:.8;margin-right:6px">Equipamento desta etapa:</span>' + safeEsc(exEquip) + '</div>';
-      eh += '<details class="meal-subs" style="border:none;padding:0;margin:0;background:none">';
-      eh += '<summary style="color:' + safeEsc(cfg.summaryColor || 'var(--pd)') + '">📋 Como fazer</summary>';
-      eh += '<div class="ex-item-steps"><ol>';
-      if(Array.isArray(ex.steps) && ex.steps.length){ ex.steps.forEach(function(step){ eh += '<li>' + safeEsc(step) + '</li>'; }); }
-      else { eh += '<li>Posicione o corpo com estabilidade, execute o movimento com controle e mantenha a respiração solta.</li>'; }
-      eh += '</ol></div>';
-      if(ex.tip) eh += '<div class="ex-item-tip">💡 ' + safeEsc(ex.tip) + '</div>';
-      eh += '</details></div>';
-    });
-    eh += '</div>';
-    return eh;
+  if(typeof window.wmRenderEx === 'function'){
+    var oldWmRenderEx = window.wmRenderEx;
+    window.wmRenderEx = function(){
+      oldWmRenderEx();
+      try{
+        if(!window.wmState || !window.wmState.active) return;
+        var ex = window.wmState.exercises && window.wmState.exercises[window.wmState.exIdx];
+        if(!ex) return;
+        var body = document.getElementById(window.wmState.px + '-wmBody');
+        if(!body) return;
+        var card = body.querySelector('.wm-ex-card');
+        var detail = card && card.querySelector('.wm-ex-detail');
+        if(!card || !detail || card.querySelector('.wm-equip-line')) return;
+        var equip = inferExerciseEquipmentPrecise(ex);
+        var block = document.createElement('div');
+        block.className = 'wm-equip-line';
+        block.innerHTML = '<span class="label">Equipamentos:</span>' + String(equip)
+          .replace(/&/g,'&amp;')
+          .replace(/</g,'&lt;')
+          .replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;')
+          .replace(/'/g,'&#39;');
+        detail.insertAdjacentElement('afterend', block);
+      }catch(e){}
+    };
   }
 
-  function patchedRenderExerciseV3(cfg){
-    var container = document.getElementById(cfg.containerId);
-    if(!container) return;
-    var weekIndex = cfg.getWeek();
-    var phase = cfg.getPhase(weekIndex);
-    var pi = cfg.phases[phase - 1] || {};
-    var badge = document.getElementById(cfg.badgeId);
-    if(badge) badge.textContent = 'Sem ' + (weekIndex + 1);
-    var selectedDate = typeof getExerciseDate === 'function' ? getExerciseDate(weekIndex, cfg.getDay()) : new Date();
-    var h = '';
-    h += '<div class="ex-phase"><h2>' + safeEsc(cfg.emoji) + ' Fase ' + phase + ': ' + safeEsc(pi.name || '') + '</h2><p>' + safeEsc(pi.desc || '') + '</p><div class="ex-ps"><div class="ex-pst"><div class="ex-pst-v">' + safeEsc(pi.dur || '—') + '</div><div class="ex-pst-l">sessão</div></div><div class="ex-pst"><div class="ex-pst-v">' + safeEsc(pi.freq || '—') + '</div><div class="ex-pst-l">frequência</div></div><div class="ex-pst"><div class="ex-pst-v">Sem ' + (weekIndex + 1) + '</div><div class="ex-pst-l">semana</div></div><div class="ex-pst"><div class="ex-pst-v">' + safeEsc(pi.level || 'Plano') + '</div><div class="ex-pst-l">nível</div></div></div></div>';
-    if(cfg.warningHtml) h += cfg.warningHtml;
-    if(typeof window.__buildExerciseWeekNav === 'function') h += window.__buildExerciseWeekNav(cfg.prefix, weekIndex, cfg.totalWeeks, cfg.navFnName);
-    if(typeof buildSelectedDayCard === 'function') h += buildSelectedDayCard(cfg.getDay(), selectedDate);
-    h += '<div class="exercise-top-actions"><div class="start-btn-row"><button onclick="wmStart(\'' + cfg.person + '\')" style="padding:12px 20px;background:' + cfg.buttonBg + ';color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:' + cfg.buttonShadow + '">▶ Treinar</button></div>';
-    if(typeof buildDayGrid === 'function') h += buildDayGrid(cfg.getDay(), cfg.setDayFnName, function(day){ return getExerciseDate(weekIndex, day); });
-    h += '</div>';
-    container.innerHTML = h;
-    var processed = window.getProcessedWorkout(cfg.person, cfg.workouts[String(phase)] && cfg.workouts[String(phase)][cfg.getDay()], {phase:phase, day:cfg.getDay(), weekIndex:weekIndex});
-    var workout = processed && processed.workout;
-    if(!workout){
-      container.insertAdjacentHTML('beforeend','<p style="text-align:center;color:var(--tmu);padding:40px">Sem treino</p>');
-      return;
-    }
-    container.insertAdjacentHTML('beforeend', buildExerciseCard(cfg, workout));
-  }
-
-  window.__renderExercisePlan = patchedRenderExerciseV3;
-  try { __renderExercisePlan = patchedRenderExerciseV3; } catch(e) {}
-
-  var oldWmStart = window.wmStart;
-  window.wmStart = function(person){
-    if(typeof oldWmStart === 'function') oldWmStart(person);
-    if(!window.wmState || !wmState.active) return;
-    var day = '';
-    var weekIndex = 0;
-    if(person === 'rodrigo') { day = window.r_exDay; try{ weekIndex = r_exAutoDetect().ewi; }catch(e){} }
-    else if(person === 'marlene') { day = window.m_exDay; try{ weekIndex = m_exAutoDetect().ewi; }catch(e){} }
-    else if(person === 'ivo') { day = window.i_exDay; try{ weekIndex = i_exAutoDetect().ewi; }catch(e){} }
-    else if(person === 'rafael') { day = window.rf_exDay; try{ weekIndex = rf_exAutoDetect().ewi; }catch(e){} }
-    var dt = typeof getExerciseDate === 'function' ? getExerciseDate(weekIndex, day) : new Date();
-    var label = (typeof fmtLong === 'function' ? fmtLong(dt) : dt.toLocaleDateString('pt-BR'));
-    var sub = [day, label].filter(Boolean).join(' · ');
-    var subtitle = document.getElementById(wmState.px + '-wmSubtitle');
-    if(subtitle) subtitle.textContent = sub;
-  };
-  try { wmStart = window.wmStart; } catch(e) {}
-
-  window.wmRenderEx = function(){
-    const ex = wmState.exercises[wmState.exIdx];
-    if (!ex) { wmRenderSummary(); return; }
-    const pct = Math.round((wmState.exIdx / wmState.exercises.length) * 100);
-    document.getElementById(wmState.px + '-wmProgressFill').style.width = pct + '%';
-    const sm = (ex.sets||'1').match(/(\d+)/);
-    const totalSetsForEx = sm ? parseInt(sm[1]) : 1;
-    const subSteps = parseSubSteps(ex.steps);
-    const timedSubs = subSteps.filter(s => s.secs > 0);
-    const totalSubTime = timedSubs.reduce((a, s) => a + s.secs, 0);
-    const isTimed = ex.reps && (ex.reps.includes('seg') || ex.reps.includes('min') || ex.reps.includes('Min'));
-    if (!isTimed) { timedSubs.length = 0; }
-    let dots = '<div class="wm-set-dots">';
-    for (let i = 0; i < totalSetsForEx; i++) {
-      const cls = i < wmState.setIdx ? 'done' : i === wmState.setIdx ? 'current' : '';
-      dots += '<div class="wm-set-dot ' + cls + '"></div>';
-    }
-    dots += '</div>';
-    const px = wmState.px;
-    const exEquip = inferExerciseEquipmentDetailed(ex);
-    let h = '<div class="wm-ex-card">';
-    h += '<div style="font-size:12px;font-weight:700;color:var(--tmu);text-transform:uppercase;margin-bottom:8px">Exercício ' + (wmState.exIdx+1) + ' de ' + wmState.exercises.length + '</div>';
-    h += '<div class="wm-ex-name">' + safeEsc(ex.name) + '</div>';
-    h += '<div class="wm-ex-detail">' + safeEsc(ex.sets||'') + ' · ' + safeEsc(ex.reps||'') + (ex.rest && ex.rest !== '-' ? ' · Descanso: ' + safeEsc(ex.rest) : '') + '</div>';
-    h += '<div style="font-size:12px;font-weight:600;color:var(--pd);margin:8px 0 12px;padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:10px;text-align:left"><span style="opacity:.8;margin-right:6px">Equipamento desta etapa:</span>' + safeEsc(exEquip) + '</div>';
-    h += dots;
-    if (timedSubs.length > 1) {
-      h += '<div class="wm-timer" id="' + px + '-wmTimerDisplay">' + fmtTime(totalSubTime) + '</div>';
-      h += '<div style="font-size:12px;color:var(--tmu);margin-bottom:8px">' + timedSubs.length + ' etapas · Total ' + fmtTime(totalSubTime) + '</div>';
-      h += '<div id="' + px + '-wmSubStepLabel" style="font-size:14px;font-weight:600;color:var(--pd);margin-bottom:12px;min-height:40px;text-align:left;padding:8px 12px;background:var(--bg);border-radius:8px"></div>';
-      h += '<div style="margin:12px 0"><button class="wm-btn wm-btn-primary" id="' + px + '-wmStartSetBtn" onclick="wmStartSubSteps()">⏱ Iniciar etapas</button></div>';
-    } else if (isTimed || totalSubTime > 0) {
-      var totalSec = totalSubTime > 0 ? totalSubTime : 30;
-      if (!totalSubTime) { var secM = (ex.reps||'').match(/(\d+)\s*seg/); var minM = (ex.reps||'').match(/(\d+)\s*min/); totalSec = secM ? parseInt(secM[1]) : minM ? parseInt(minM[1])*60 : 30; }
-      h += '<div class="wm-timer" id="' + px + '-wmTimerDisplay">' + fmtTime(totalSec) + '</div>';
-      h += '<div style="margin:12px 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="wm-btn wm-btn-primary" onclick="wmStartTimer(' + totalSec + ', false)">▶ Iniciar</button><button class="wm-btn wm-btn-outline" onclick="wmSkipEx()">Pular</button></div>';
-    } else {
-      h += '<div style="margin:12px 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="wm-btn wm-btn-primary" onclick="wmCompleteSet()">✅ Concluir série</button><button class="wm-btn wm-btn-outline" onclick="wmSkipEx()">Pular</button></div>';
-    }
-    h += '<div class="wm-steps"><ol>';
-    if(Array.isArray(ex.steps) && ex.steps.length){ ex.steps.forEach(function(step){ h += '<li>' + safeEsc(step) + '</li>'; }); }
-    else { h += '<li>Execute com técnica limpa e respiração contínua.</li>'; }
-    h += '</ol></div>';
-    if(ex.tip) h += '<div class="wm-tip">💡 ' + safeEsc(ex.tip) + '</div>';
-    h += '</div>';
-    document.getElementById(px + '-wmBody').innerHTML = h;
-  };
-  try { wmRenderEx = window.wmRenderEx; } catch(e) {}
-
-  if(window.R && typeof R.renderW === 'function') R.renderW();
-  if(window.M && typeof M.renderW === 'function') M.renderW();
   if(typeof window.r_renderEx === 'function') window.r_renderEx();
   if(typeof window.m_renderEx === 'function') window.m_renderEx();
   if(typeof window.i_renderEx === 'function') window.i_renderEx();
   if(typeof window.rf_renderEx === 'function') window.rf_renderEx();
 })();
 </script>
-
-
-<script>
-(function(){
-  function hideDayLevelEquipment(){
-    try{
-      document.querySelectorAll('.ex-card > div').forEach(function(node){
-        var txt = (node.textContent || '').trim();
-        if(/equipamentos do treino/i.test(txt)){
-          node.style.display = 'none';
-        }
-      });
-    }catch(e){}
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', hideDayLevelEquipment);
-  }else{
-    hideDayLevelEquipment();
-  }
-  ['r_renderEx','m_renderEx','i_renderEx','rf_renderEx'].forEach(function(fn){
-    try{
-      var orig = window[fn];
-      if(typeof orig === 'function'){
-        window[fn] = function(){
-          var out = orig.apply(this, arguments);
-          hideDayLevelEquipment();
-          return out;
-        };
-      }
-    }catch(e){}
-  });
-})();
-</script>
-
 
 </body>
 </html>
