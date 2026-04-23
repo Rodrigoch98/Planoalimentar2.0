@@ -6239,5 +6239,445 @@ NutritionApp.prototype.renderD = function(){
 })();
 </script>
 
+
+<script>
+(function(){
+  if(window.__FINAL_EX_REVIEW_V10__) return;
+  window.__FINAL_EX_REVIEW_V10__ = true;
+
+  function cloneDeep(obj){
+    try { return JSON.parse(JSON.stringify(obj)); } catch(e){ return obj; }
+  }
+  function norm(v){
+    return String(v == null ? '' : v)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase();
+  }
+  function uniq(arr, item){ if(item && arr.indexOf(item) === -1) arr.push(item); }
+  function parseRestSec(v){
+    var s = String(v == null ? '' : v).toLowerCase();
+    var n = parseInt(s,10);
+    if(isNaN(n)) return 0;
+    return n;
+  }
+  function setMinRest(ex, minSec){
+    var cur = parseRestSec(ex.rest);
+    if(cur < minSec) ex.rest = minSec + 's';
+  }
+  function hasAny(text, list){
+    text = norm(text);
+    return list.some(function(k){ return text.indexOf(norm(k)) >= 0; });
+  }
+  function classifyExercise(name){
+    if(typeof window.classifySlot === 'function') return window.classifySlot(name || '');
+    var s = norm(name);
+    if(/bike intervalada|intervalos na bike|finisher na bike|bike moderada|bike continua/.test(s)) return 'bike_intervals';
+    if(/aquecimento.*bike|bike.*aquecimento|pedale/.test(s)) return 'warmup_bike';
+    if(/mobilidade|recuperacao ativa|relaxamento guiado/.test(s)) return 'mobility';
+    if(/volta a calma|alongamento final|alongar|dia de recuperacao|descanso total|respiracao e alongamento final/.test(s)) return 'cooldown';
+    if(/supino|chest press|peitoral|voador/.test(s)) return 'chest';
+    if(/puxada alta|pulldown/.test(s)) return 'pulldown';
+    if(/remada/.test(s)) return 'row';
+    if(/desenvolvimento/.test(s)) return 'shoulder_press';
+    if(/elevacao lateral/.test(s)) return 'shoulder_raise';
+    if(/triceps/.test(s)) return 'triceps';
+    if(/rosca|biceps/.test(s)) return 'biceps';
+    if(/agachamento|step-up|step up|subida no step|sentar e levantar/.test(s)) return 'squat';
+    if(/romeno|levantamento|bumbum para tras/.test(s)) return 'hinge';
+    if(/extensora/.test(s)) return 'knee_ext';
+    if(/flexora|posterior de coxa no tapete/.test(s)) return 'knee_flex';
+    if(/ponte de gluteos|elevacao de quadril|hip thrust/.test(s)) return 'glute_bridge';
+    if(/panturrilha/.test(s)) return 'calf';
+    if(/face pull|pull-apart|postura/.test(s)) return 'posture';
+    if(/prancha|abdomen|abdômen|core|dead bug|bird dog/.test(s)) return 'core';
+    if(/caminhada do fazendeiro|farmer|marcha parada com halter|marcha estacionaria/.test(s)) return 'carry';
+    if(/circuito/.test(s)) return 'circuit';
+    return 'generic';
+  }
+
+  function inferEquipmentFromText(text){
+    text = norm(text);
+    var items = [];
+    if(/bike|bicicleta|pedale|spinning/.test(text)) uniq(items,'Bicicleta');
+    if(/chest press|voador|puxada alta|remada baixa|polia alta|polia baixa|triceps na polia|rosca scott|extensora|estacao mbx|estacao/.test(text)) uniq(items,'Estação MBX');
+    if(/supino|halter|haltere|remada unilateral|rosca alternada|rosca martelo|rosca direta|desenvolvimento sentado|triceps acima|crucifixo/.test(text)) uniq(items,'Halteres');
+    if(/kettlebell|goblet/.test(text)) uniq(items,'Kettlebell');
+    if(/mini band/.test(text)) uniq(items,'Mini band');
+    if(/super band|elastico|elástico/.test(text)) uniq(items,'Super band');
+    if(/caneleira/.test(text)) uniq(items,'Caneleiras');
+    if(/step/.test(text)) uniq(items,'Step');
+    if(/banco|hip thrust|prancha inclinada|sentar e levantar/.test(text)) uniq(items,'Banco');
+    if(/tapete|dead bug|prancha|ponte|deite|deitado|alongamento|mobilidade/.test(text)) uniq(items,'Tapete');
+    if(/peso do corpo|sem equipamento|marcha no lugar|respiracao|respiração|caminhada/.test(text) && !items.length) uniq(items,'Peso do corpo');
+    return items;
+  }
+
+  function inferStageEquipment(ex){
+    if(ex && ex.equip) return ex.equip;
+    var n = norm(ex && ex.name || '');
+    var items = [];
+    var rawSteps = Array.isArray(ex && ex.steps) ? ex.steps.join(' ') : '';
+
+    if(/circuito a|circuito b/.test(n)){
+      var fromCircuit = inferEquipmentFromText(rawSteps);
+      if(fromCircuit.length) return fromCircuit.join(' · ');
+    }
+    if(/aquecimento na bike|bike intervalada|pedalada/.test(n)) return 'Bicicleta';
+    if(/mobilidade opcional/.test(n)) return rawSteps && /pedale|bike/.test(norm(rawSteps)) ? 'Bicicleta · Tapete' : 'Tapete';
+    if(/dia de recuperacao|descanso total/.test(n)) return 'Peso do corpo';
+    if(/volta a calma|alongamento final|relaxamento final/.test(n)) return 'Tapete';
+
+    if(/chest press|voador|puxada alta|remada baixa|triceps na polia|extensora|rosca scott/.test(n)) uniq(items,'Estação MBX');
+    if(/supino|remada unilateral|rosca alternada|rosca martelo|rosca direta|desenvolvimento sentado|triceps acima|crucifixo/.test(n)) uniq(items,'Halteres');
+    if(/supino|remada unilateral|desenvolvimento sentado|hip thrust|prancha inclinada|sentar e levantar/.test(n)) uniq(items,'Banco');
+    if(/goblet|kettlebell/.test(n)) uniq(items,'Kettlebell');
+    if(/mini band/.test(n)) uniq(items,'Mini band');
+    if(/super band|elastico|elástico/.test(n)) uniq(items,'Super band');
+    if(/caneleira/.test(n)) uniq(items,'Caneleiras');
+    if(/step-up|step up|step-up controlado|panturrilha no step|step/.test(n)) uniq(items,'Step');
+    if(/posterior de coxa no tapete|dead bug|ponte de gluteos|ponte de glúteos|prancha|tapete/.test(n)) uniq(items,'Tapete');
+    if(/agachamento livre controlado|marcha estacionaria|marcha estacionária/.test(n) && !items.length) uniq(items,'Peso do corpo');
+
+    if(!items.length){
+      inferEquipmentFromText((ex && ex.name || '') + ' ' + rawSteps).forEach(function(it){ uniq(items,it); });
+    }
+    if(!items.length) uniq(items,'Peso do corpo');
+    return items.join(' · ');
+  }
+
+  function buildBikeWarmupSteps(person){
+    var mid = person === 'marlene' || person === 'ivo'
+      ? 'Pedale por 2 a 3 minutos em ritmo confortável, sem deixar a respiração disparar.'
+      : 'Pedale por 2 a 3 minutos em ritmo moderado, com a respiração sob controle.';
+    return [
+      'Sente na bicicleta, ajuste a posição para pedalar sem travar o joelho no final do movimento e apoie bem as mãos.',
+      'Pedale por 2 minutos em ritmo leve para começar o aquecimento.',
+      mid,
+      'Reduza o ritmo por 1 a 2 minutos e termine pronto para iniciar a força sem pressa.'
+    ];
+  }
+
+  function buildBikeIntervalSteps(person){
+    var forte = person === 'rafael'
+      ? 'Pedale por 30 segundos em ritmo forte, mas sem virar sprint máximo.'
+      : (person === 'marlene' || person === 'ivo'
+          ? 'Pedale por 20 a 30 segundos em ritmo firme e confortável, sem ficar ofegante demais.'
+          : 'Pedale por 20 a 30 segundos em ritmo firme, sem perder o controle da respiração.');
+    return [
+      'Comece com 2 minutos em ritmo leve para preparar joelhos, quadril e respiração.',
+      forte,
+      'Recupere por 45 a 60 segundos em ritmo leve.',
+      'Repita o bloco de esforço e recuperação pelo tempo previsto do treino.',
+      'Feche com 2 minutos bem leves até a respiração voltar ao normal.'
+    ];
+  }
+
+  function buildStrengthSteps(ex, start, exec, finish){
+    return [start, exec, finish || 'Termine a repetição, volte para a posição inicial com controle e só então comece a próxima.'];
+  }
+
+  function defaultStepsByExercise(person, ex){
+    var n = norm(ex.name || '');
+    var slot = classifyExercise(ex.name || '');
+    var equip = inferStageEquipment(ex);
+
+    if(slot === 'warmup_bike') return buildBikeWarmupSteps(person);
+    if(slot === 'bike_intervals') return buildBikeIntervalSteps(person);
+
+    if(/mini band pull-apart/.test(n)) return [
+      'Segure a mini band na altura do peito com os braços estendidos e ombros baixos.',
+      'Abra os braços até sentir as escápulas se aproximarem, sem arquear as costas.',
+      'Volte devagar até a posição inicial e repita mantendo o peito aberto.'
+    ];
+    if(/face pull/.test(n)) return [
+      'Prenda a super band em um ponto firme na altura do rosto e fique de pé com postura alta.',
+      'Puxe o elástico em direção ao nariz com cotovelos abertos e mãos separando no final.',
+      'Volte devagar sem encolher os ombros e repita com controle.'
+    ];
+    if(/supino reto/.test(n)) return [
+      'Deite no banco reto, apoie os pés no chão e segure um halter em cada mão acima do peito.',
+      'Desça os halteres de forma controlada até a linha lateral do peito, sem abrir demais os cotovelos.',
+      'Empurre para cima sem bater os halteres no topo e volte a organizar a postura antes da próxima repetição.'
+    ];
+    if(/supino inclinado/.test(n)) return [
+      'Ajuste o banco em inclinação moderada, deite com as escápulas apoiadas e segure um halter em cada mão.',
+      'Desça os halteres até a parte alta do peito com punhos alinhados e cotovelos sob controle.',
+      'Suba em direção ao alto e levemente para dentro, sem bater os halteres no final.'
+    ];
+    if(/chest press/.test(n) || /voador/.test(n)) return [
+      'Sente na Estação MBX, ajuste o assento para as mãos ficarem na linha do peito e apoie bem os pés.',
+      'Empurre as alças para frente ou feche os braços no voador sem tirar as costas do encosto.',
+      'Volte devagar, sem deixar a pilha bater, e repita mantendo o peito aberto.'
+    ];
+    if(/puxada alta/.test(n)) return [
+      'Sente na Estação MBX, segure a barra com pegada confortável e mantenha o tronco alto.',
+      'Puxe a barra para a frente do peito sem jogar o corpo para trás.',
+      'Suba a barra devagar até quase estender os braços e repita sem perder a postura.'
+    ];
+    if(/remada baixa/.test(n)) return [
+      'Sente na Estação MBX ou posicione-se na polia baixa com o tronco alto e os pés bem apoiados.',
+      'Puxe o acessório em direção ao umbigo, aproximando as escápulas no final do movimento.',
+      'Volte devagar até quase estender os braços e repita sem balançar o corpo.'
+    ];
+    if(/remada unilateral/.test(n)) return [
+      'Apoie uma mão e um joelho no banco e segure o halter com a outra mão.',
+      'Puxe o halter em direção ao quadril sem girar o tronco nem levantar o ombro.',
+      'Desça devagar até quase estender o braço, conclua o lado e depois troque.'
+    ];
+    if(/desenvolvimento sentado/.test(n)) return [
+      'Sente no banco com o encosto quase vertical e segure os halteres na altura das orelhas.',
+      'Empurre os halteres para cima sem arquear a lombar nem prender a respiração.',
+      'Desça devagar até a posição inicial e repita mantendo o pescoço relaxado.'
+    ];
+    if(/desenvolvimento em pe|desenvolvimento em pé/.test(n)) return [
+      'Pise no centro da super band e leve as mãos à altura dos ombros com postura alta.',
+      'Empurre as mãos para cima sem arquear a lombar e sem acelerar o movimento.',
+      'Desça devagar até os ombros e repita com o abdômen firme.'
+    ];
+    if(/elevacao lateral|elevação lateral/.test(n)) return [
+      'Fique de pé com os halteres ao lado do corpo ou a super band já tensionada, conforme o exercício.',
+      'Eleve os braços para o lado até a linha do ombro, sem encolher o pescoço.',
+      'Desça devagar e repita sem balanço.'
+    ];
+    if(/triceps na polia/.test(n)) return [
+      'Fique de pé na Estação MBX, cotovelos junto ao corpo e mãos segurando o acessório da polia alta.',
+      'Empurre o acessório para baixo até estender os braços sem jogar o tronco para frente.',
+      'Retorne devagar até a posição inicial e repita mantendo os cotovelos no lugar.'
+    ];
+    if(/triceps acima/.test(n)) return [
+      'Sente no banco e segure um halter com as duas mãos atrás da cabeça.',
+      'Estenda os braços para cima sem abrir demais os cotovelos.',
+      'Desça devagar até atrás da cabeça e repita mantendo o tronco estável.'
+    ];
+    if(/rosca alternada/.test(n)) return [
+      'Fique de pé ou sente com a postura alta e um halter em cada mão ao lado do corpo.',
+      'Suba um braço por vez girando a palma para cima sem mexer o tronco.',
+      'Desça devagar, conclua as repetições de cada lado e mantenha os cotovelos perto do corpo.'
+    ];
+    if(/rosca martelo/.test(n)) return [
+      'Segure os halteres com a palma voltada uma para a outra e postura alta.',
+      'Dobre os braços sem deixar os cotovelos saírem para frente.',
+      'Desça devagar até quase estender e repita sem balanço.'
+    ];
+    if(/rosca com super band|rosca direta/.test(n)) return [
+      'Pise na super band e segure as pontas com os cotovelos junto ao corpo.',
+      'Dobre os braços para subir as mãos sem balançar o tronco.',
+      'Desça devagar até a posição inicial e repita com controle.'
+    ];
+    if(/agachamento goblet/.test(n)) return [
+      'Segure o kettlebell junto ao peito, pés na largura dos ombros e peito aberto.',
+      'Desça o quadril até o ponto em que consegue manter coluna neutra e joelhos alinhados.',
+      'Suba empurrando o chão com o pé todo e organize a postura antes da próxima repetição.'
+    ];
+    if(/agachamento livre controlado|sentar e levantar/.test(n)) return [
+      'Fique em pé com os pés na largura dos ombros ou sente na ponta do banco, conforme o exercício.',
+      'Desça com controle mantendo o peito aberto e o peso distribuído no meio do pé.',
+      'Suba sem impulso, recupere o equilíbrio e só então repita.'
+    ];
+    if(/step-up|step up/.test(n)) return [
+      'Posicione um pé inteiro sobre o step e mantenha o tronco alto.',
+      'Suba controlando o joelho da frente e evite empurrar forte com a perna de trás.',
+      'Desça devagar, estabilize e então faça a próxima repetição ou troque o lado.'
+    ];
+    if(/extensora/.test(n)) return [
+      'Sente na Estação MBX e ajuste o rolo acima do peito do pé com as costas apoiadas.',
+      'Estenda os joelhos até quase o final do movimento, sem travar.',
+      'Volte devagar controlando a carga antes de repetir.'
+    ];
+    if(/posterior de coxa no tapete/.test(n)) return [
+      'Deite de barriga para baixo no tapete e mantenha o quadril apoiado.',
+      'Dobre um joelho por vez aproximando o calcanhar do glúteo, com ou sem caneleira leve.',
+      'Desça devagar, estabilize o quadril e depois troque o lado.'
+    ];
+    if(/levantamento romeno/.test(n)) return [
+      'Fique em pé com halteres ao lado do corpo, joelhos levemente flexionados e peito aberto.',
+      'Leve o quadril para trás enquanto os halteres descem perto das pernas, sem arredondar as costas.',
+      'Suba apertando glúteos e volte à postura alta antes da próxima repetição.'
+    ];
+    if(/hip thrust/.test(n)) return [
+      'Apoie a parte alta das costas no banco e deixe os pés firmes no chão.',
+      'Suba o quadril apertando glúteos no topo, com halter ou kettlebell apoiado se o plano pedir.',
+      'Desça devagar sem desabar a lombar e repita com o queixo levemente recolhido.'
+    ];
+    if(/ponte de gluteos|ponte de glúteos/.test(n)) return [
+      'Deite no tapete com joelhos dobrados e pés apoiados no chão.',
+      'Suba o quadril apertando glúteos sem arquear demais a lombar.',
+      'Desça devagar até quase encostar e repita mantendo o abdômen firme.'
+    ];
+    if(/panturrilha no step/.test(n)) return [
+      'Apoie a ponta dos pés no step e use a parede ou o banco apenas para equilibrar.',
+      'Desça os calcanhares e depois suba até a maior contração que conseguir com controle.',
+      'Volte devagar e repita sem pular.'
+    ];
+    if(/dead bug/.test(n) && /prancha/.test(n)) return [
+      'No tapete, faça o dead bug mantendo a lombar apoiada enquanto alterna braço e perna opostos.',
+      'Sem pressa, termine o dead bug e passe para a prancha inclinada com os antebraços no banco.',
+      'Mantenha o corpo alinhado na prancha, respire pelo nariz e finalize o bloco com controle.'
+    ];
+    if(/dead bug/.test(n)) return [
+      'Deite no tapete com braços apontados para cima e joelhos dobrados a noventa graus.',
+      'Estenda braço e perna opostos sem tirar a lombar do chão.',
+      'Volte ao centro, troque o lado e siga alternando com calma.'
+    ];
+    if(/prancha/.test(n)) return [
+      'Apoie os antebraços no banco ou no tapete, conforme o exercício, e alinhe ombros, quadril e tornozelos.',
+      'Segure a posição sem prender a respiração e sem deixar o quadril cair.',
+      'Saia devagar da posição, recupere a respiração e então repita.'
+    ];
+    if(/marcha estacionaria|marcha estacionária/.test(n)) return [
+      'Fique em pé com postura alta e use apoio leve se precisar de equilíbrio.',
+      'Eleve um joelho de cada vez em ritmo controlado, mantendo a respiração solta.',
+      'Reduza o ritmo, organize a postura e finalize sem tontura.'
+    ];
+    if(/volta a calma|alongamento final|relaxamento final/.test(n)) return [
+      'Reduza o ritmo, solte os ombros e deixe a respiração baixar antes de alongar.',
+      'Alongue com leveza a musculatura principal do treino, sem forçar nem buscar dor.',
+      'Feche com respiração lenta pelo nariz até sentir o corpo sair do modo de esforço.'
+    ];
+    if(/mobilidade opcional/.test(n)) return [
+      'Comece com alongamentos leves para quadril, peito e costas, sem forçar amplitude.',
+      'Se o plano do dia incluir bicicleta, pedale em ritmo confortável e contínuo.',
+      'Finalize com respiração calma e sensação de corpo solto, não de cansaço.'
+    ];
+    if(/dia de recuperacao|dia de recuperação/.test(n)) return [
+      'Hoje o foco é recuperar, então priorize sono, água e alimentação regular.',
+      'Se quiser se movimentar, faça uma caminhada curta em ritmo confortável.',
+      'Pare antes de cansar e termine com alguns minutos de respiração lenta.'
+    ];
+    if(/circuito a|circuito b/.test(n)){
+      var base = Array.isArray(ex.steps) ? ex.steps.slice() : [];
+      if(base.length) return base;
+    }
+
+    var existing = Array.isArray(ex.steps) ? ex.steps.filter(Boolean) : [];
+    if(existing.length >= 3) return existing.slice(0,5);
+    return [
+      'Prepare o corpo e organize o equipamento desta etapa: ' + equip + '.',
+      'Execute o movimento com controle, respiração solta e postura estável.',
+      'Volte devagar para a posição inicial e só então repita.'
+    ];
+  }
+
+  function personSpecificTip(person, ex){
+    var slot = classifyExercise(ex.name || '');
+    if(person === 'marlene'){
+      if(['warmup_bike','bike_intervals','squat','hinge','knee_ext','glute_bridge','core'].indexOf(slot) >= 0){
+        return 'Pare se a tontura subir, se a dor disparar ou se o corpo não estabilizar bem naquele dia.';
+      }
+      return 'Mantenha o ritmo confortável e sem pressa. Em dia ruim, vale reduzir a carga ou a amplitude.';
+    }
+    if(person === 'rodrigo'){
+      if(['shoulder_press','squat','hinge','row','pulldown','chest','core','bike_intervals'].indexOf(slot) >= 0){
+        return 'Solte o ar no esforço. Se aparecer tontura, pressão na cabeça ou dor de cabeça diferente do habitual, pare o bloco.';
+      }
+      return 'Controle mais vale do que pressa. Evite prender a respiração durante a repetição.';
+    }
+    if(person === 'ivo'){
+      if(['hinge','row','chest','bike_intervals','warmup_bike'].indexOf(slot) >= 0){
+        return 'Não faça o treino logo após refeição grande. Se a azia ou a fadiga subirem, reduza o ritmo.';
+      }
+      return 'Priorize postura, respiração solta e pegada confortável, sem forçar a mão com excesso de tensão.';
+    }
+    if(person === 'rafael'){
+      if(['bike_intervals','chest','pulldown','row','shoulder_press','squat','hinge'].indexOf(slot) >= 0){
+        return 'Pare a série com margem, sem buscar falha total nem sprint máximo. Técnica primeiro, carga depois.';
+      }
+      return 'Movimento limpo e controlado. Não vale acelerar a série só para terminar mais rápido.';
+    }
+    return ex.tip || '';
+  }
+
+  function reviewExercise(person, ex){
+    var out = cloneDeep(ex || {});
+    out.equip = inferStageEquipment(out);
+    out.steps = defaultStepsByExercise(person, out);
+
+    var slot = classifyExercise(out.name || '');
+    if(person === 'marlene'){
+      if(['chest','pulldown','row','shoulder_press','squat','hinge','knee_ext','glute_bridge','core'].indexOf(slot) >= 0) setMinRest(out, 60);
+      if(slot === 'bike_intervals') setMinRest(out, 60);
+    }
+    if(person === 'rodrigo'){
+      if(['chest','pulldown','row','shoulder_press','squat','hinge','carry','core','bike_intervals'].indexOf(slot) >= 0) setMinRest(out, 60);
+    }
+    if(person === 'ivo'){
+      if(['chest','pulldown','row','shoulder_press','squat','hinge','knee_ext','glute_bridge','bike_intervals'].indexOf(slot) >= 0) setMinRest(out, 60);
+    }
+    if(person === 'rafael'){
+      if(['chest','pulldown','row','shoulder_press','squat','hinge','bike_intervals'].indexOf(slot) >= 0) setMinRest(out, 60);
+    }
+
+    out.tip = personSpecificTip(person, out);
+    return out;
+  }
+
+  if(typeof window.inferExerciseEquipment === 'function'){
+    window.inferExerciseEquipment = inferStageEquipment;
+  } else {
+    window.inferExerciseEquipment = inferStageEquipment;
+  }
+
+  if(typeof window.getProcessedWorkout === 'function'){
+    var __oldProcessedWorkoutV10 = window.getProcessedWorkout;
+    window.getProcessedWorkout = function(person, workout, ctx){
+      var processed = __oldProcessedWorkoutV10(person, workout, ctx);
+      if(!processed || !processed.workout || !Array.isArray(processed.workout.exercises)) return processed;
+      processed.workout.exercises = processed.workout.exercises.map(function(ex){
+        return reviewExercise(person, ex);
+      });
+      if(processed.workout.focus){
+        processed.workout.focus = String(processed.workout.focus)
+          .replace(/janela anterior de equipamentos ate 26\/04/gi,'')
+          .replace(/janela nova de equipamentos desde 27\/04/gi,'')
+          .replace(/\s+·\s+\s*/g,' · ')
+          .replace(/^\s*·\s*/,'')
+          .replace(/\s*·\s*$/,'')
+          .trim();
+      }
+      return processed;
+    };
+  }
+
+  if(typeof window.wmRenderEx === 'function'){
+    var __oldWmRenderExV10 = window.wmRenderEx;
+    window.wmRenderEx = function(){
+      __oldWmRenderExV10();
+      try{
+        if(!window.wmState || !window.wmState.active) return;
+        var ex = window.wmState.exercises && window.wmState.exercises[window.wmState.exIdx];
+        if(!ex) return;
+        var body = document.getElementById(window.wmState.px + '-wmBody');
+        if(!body) return;
+        var card = body.querySelector('.wm-ex-card');
+        var detail = card && card.querySelector('.wm-ex-detail');
+        if(!card || !detail) return;
+        var prev = card.querySelector('.wm-equip-line');
+        if(prev) prev.remove();
+        var equip = inferStageEquipment(ex);
+        var block = document.createElement('div');
+        block.className = 'wm-equip-line';
+        block.style.fontSize = '12px';
+        block.style.color = 'var(--tm)';
+        block.style.fontWeight = '700';
+        block.style.margin = '10px 0 6px';
+        block.style.padding = '8px 10px';
+        block.style.background = 'var(--bg)';
+        block.style.borderRadius = '10px';
+        block.style.border = '1px solid var(--bd)';
+        block.innerHTML = '<span style="color:var(--pd);margin-right:6px">Equipamento desta etapa:</span>' + String(equip)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        detail.insertAdjacentElement('afterend', block);
+      }catch(e){}
+    };
+  }
+
+  if(typeof window.r_renderEx === 'function') window.r_renderEx();
+  if(typeof window.m_renderEx === 'function') window.m_renderEx();
+  if(typeof window.i_renderEx === 'function') window.i_renderEx();
+  if(typeof window.rf_renderEx === 'function') window.rf_renderEx();
+})();
+</script>
+
 </body>
 </html>
