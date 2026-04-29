@@ -339,7 +339,7 @@ img,svg{max-width:100%;height:auto}
 
 <!-- ==================== RODRIGO APP ==================== -->
 <div class="app rodrigo active" id="app-rodrigo">
-<div class="hdr"><div class="hdr-in"><div class="hdr-l"><div class="hdr-ic">🥗</div><div><h1>PLANO NUTRICIONAL + TREINO</h1><div class="hdr-sub">Rodrigo · Mar/2026 → Jan/2027</div></div></div><div class="hdr-badge" id="r-hBadge">Sem 1</div></div></div>
+<div class="hdr"><div class="hdr-in"><div class="hdr-l"><div class="hdr-ic">💪</div><div><h1>PLANO NUTRICIONAL + TREINO</h1><div class="hdr-sub">Rodrigo · Mar/2026 → Jan/2027</div></div></div><div class="hdr-badge" id="r-hBadge">Sem 1</div></div></div>
 
 <div id="r-t-resumo" class="tc active">
   <div class="rh"><h2>Programa de Emagrecimento</h2><p>Personalizado · Déficit calórico controlado · Baseado em evidências</p>
@@ -354,8 +354,8 @@ img,svg{max-width:100%;height:auto}
   <div class="card"><div class="card-title">💊 Protocolo Diário</div>
     <div class="ms"><h3>Jejum (05:00)</h3><div class="mr"><div class="mr-i"><div class="mr-n">Puran T4</div><div class="mr-d">Jejum · Apenas água · 30–60 min antes de comer · manter multivitamínico, cálcio e ferro 4h afastados</div></div><div class="mr-p">175 mcg</div></div></div>
     <div class="ms"><h3>Café (05:30)</h3><div class="mr"><div class="mr-i"><div class="mr-n">Sertralina</div><div class="mr-d">Com alimento</div></div><div class="mr-p">100 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Clomifeno</div><div class="mr-d">Dia sim, dia não</div></div><div class="mr-p">25 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Kit Capilar</div><div class="mr-d">Biotina + Minoxidil + Dutasterida</div></div><div class="mr-p">Receita</div></div></div>
-    <div class="ms"><h3>Almoço (12:00)</h3><div class="mr"><div class="mr-i"><div class="mr-n">Vitamina D3</div><div class="mr-d">Com gordura da refeição</div></div><div class="mr-p">2000 UI</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Ômega 3 Ultra</div><div class="mr-d">Growth · 1 cápsula</div></div><div class="mr-p">1000 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Multivitamínico Growth</div><div class="mr-d">Essencial (4h afastado do Puran T4)</div></div><div class="mr-p">1 cp</div></div></div>
-    <div class="ms"><h3>Noite (20:30)</h3><div class="mr"><div class="mr-i"><div class="mr-n">Cabergolina</div><div class="mr-d">Diário + extra qua/sáb</div></div><div class="mr-p">0,5 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Topiramato</div><div class="mr-d">Uso contínuo</div></div><div class="mr-p">100 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Magnésio Quelato</div><div class="mr-d">Ecomev · 500mg</div></div><div class="mr-p">1 cáps</div></div></div>
+    <div class="ms"><h3>Almoço (12:00)</h3><div class="mr"><div class="mr-i"><div class="mr-n">Multivitamínico Growth</div><div class="mr-d">Essencial · 4h afastado do Puran T4</div></div><div class="mr-p">1 cp</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Vitamina D Ultra</div><div class="mr-d">Growth · Com gordura da refeição</div></div><div class="mr-p">2000 UI</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Óleo de Peixe Ultra</div><div class="mr-d">Growth · Ômega 3 · Com refeição</div></div><div class="mr-p">1 cáps</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Coenzima Q10</div><div class="mr-d">Growth · Lipossolúvel · Com gordura da refeição</div></div><div class="mr-p">100 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Vitamina C</div><div class="mr-d">Growth · Com refeição · Auxilia absorção de ferro</div></div><div class="mr-p">500 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Complexo B</div><div class="mr-d">Growth · Energia diurna · Evitar à noite</div></div><div class="mr-p">1 cáps</div></div></div>
+    <div class="ms"><h3>Noite (20:30)</h3><div class="mr"><div class="mr-i"><div class="mr-n">Cabergolina</div><div class="mr-d">Diário + extra qua/sáb</div></div><div class="mr-p">0,5 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Topiramato</div><div class="mr-d">Uso contínuo</div></div><div class="mr-p">100 mg</div></div><div class="mr"><div class="mr-i"><div class="mr-n">Cloreto de Magnésio</div><div class="mr-d">Growth · Relaxamento muscular e sono</div></div><div class="mr-p">1 cp</div></div></div>
   </div>
 </div>
 
@@ -1102,14 +1102,14 @@ class NutritionApp {
         var dow = this.cD;
         var isOdd = ['Segunda','Quarta','Sexta','Domingo'].indexOf(dow) >= 0;
         if (isOdd) h += '<span class="mp mp-v">\ud83d\udc8a Clomifeno 25mg</span>';
-        h += '<span class="mp mp-g">\ud83d\udc8a Multi Growth</span><span class="mp mp-a">\ud83d\udc8a Kit Capilar</span>';
+        h += '<span class="mp mp-a">\ud83d\udc8a Kit Capilar</span>';
         return h;
       }
-      if (time === '12:00' || mealName.includes('Almo\u00e7o')) return '<span class="mp mp-g">\ud83d\udc8a D3 2000UI</span><span class="mp mp-b">\ud83d\udc8a \u00d4mega 3 Ultra</span>';
+      if (time === '12:00' || mealName.includes('Almo\u00e7o')) return '<span class="mp mp-g">\ud83d\udc8a Multi Growth</span><span class="mp mp-g">\ud83d\udc8a Vit D Ultra 2000UI</span><span class="mp mp-b">\ud83d\udc8a \u00d3leo de Peixe Ultra</span><span class="mp mp-v">\ud83d\udc8a Coenzima Q10 100mg</span><span class="mp mp-a">\ud83d\udc8a Vitamina C 500mg</span><span class="mp mp-r">\ud83d\udc8a Complexo B</span>';
       if (mealName.includes('Ceia') || time === '20:30') {
         var dow2 = this.cD;
         var isExtra = ['Quarta','S\u00e1bado'].indexOf(dow2) >= 0;
-        return '<span class="mp mp-v">\ud83d\udc8a Cabergolina 0,5mg'+(isExtra?' +extra':'')+' </span><span class="mp mp-b">\ud83d\udc8a Topiramato 100mg</span><span class="mp mp-g">\ud83d\udc8a Magn\u00e9sio 500mg</span>';
+        return '<span class="mp mp-v">\ud83d\udc8a Cabergolina 0,5mg'+(isExtra?' +extra':'')+' </span><span class="mp mp-b">\ud83d\udc8a Topiramato 100mg</span><span class="mp mp-g">\ud83d\udc8a Cloreto de Magn\u00e9sio</span>';
       }
     } else {
       if (time === '09:30' && mealName.includes('Caf\u00e9')) return '<span class="mp mp-r">\ud83d\udc8a Citalopram 20mg</span><span class="mp mp-g">\ud83d\udc8a Col\u00e1geno 10g</span>';
@@ -3035,11 +3035,11 @@ if(document.getElementById('app-rodrigo') && document.getElementById('app-rodrig
         return h;
       }
       if (time === '12:00' || mealName.includes('Almoço')) {
-        return '<span class="mp mp-g">💊 D3 2000UI</span><span class="mp mp-b">💊 Ômega 3 Ultra</span><span class="mp mp-g">💊 Multi Growth</span>';
+        return '<span class="mp mp-g">💊 Multi Growth</span><span class="mp mp-g">💊 Vit D Ultra 2000UI</span><span class="mp mp-b">💊 Óleo de Peixe Ultra</span><span class="mp mp-v">💊 Coenzima Q10 100mg</span><span class="mp mp-a">💊 Vitamina C 500mg</span><span class="mp mp-r">💊 Complexo B</span>';
       }
       if (mealName.includes('Ceia') || time === '20:30') {
         var isExtra = ['Quarta','Sábado'].indexOf(this.cD) >= 0;
-        return '<span class="mp mp-v">💊 Cabergolina 0,5mg' + (isExtra ? ' +extra' : '') + '</span><span class="mp mp-b">💊 Topiramato 100mg</span><span class="mp mp-g">💊 Magnésio 500mg</span>';
+        return '<span class="mp mp-v">💊 Cabergolina 0,5mg' + (isExtra ? ' +extra' : '') + '</span><span class="mp mp-b">💊 Topiramato 100mg</span><span class="mp mp-g">💊 Cloreto de Magnésio</span>';
       }
     } else {
       if (time === '09:30' && mealName.includes('Café')) return '<span class="mp mp-r">💊 Citalopram 20mg</span><span class="mp mp-g">💊 Colágeno 10g</span>';
@@ -3575,11 +3575,11 @@ if(document.getElementById('app-rodrigo') && document.getElementById('app-rodrig
         return h;
       }
       if (time === '12:00' || /Almoço/i.test(mealName || '')) {
-        return '<span class="mp mp-g">💊 D3 2000UI</span><span class="mp mp-b">💊 Ômega 3 Ultra</span><span class="mp mp-g">💊 Multi Growth</span>';
+        return '<span class="mp mp-g">💊 Multi Growth</span><span class="mp mp-g">💊 Vit D Ultra 2000UI</span><span class="mp mp-b">💊 Óleo de Peixe Ultra</span><span class="mp mp-v">💊 Coenzima Q10 100mg</span><span class="mp mp-a">💊 Vitamina C 500mg</span><span class="mp mp-r">💊 Complexo B</span>';
       }
       if (/Ceia/i.test(mealName || '') || time === '20:30') {
         var extra = ['Quarta','Sábado'].indexOf(this.cD) >= 0;
-        return '<span class="mp mp-v">💊 Cabergolina 0,5mg' + (extra ? ' +extra' : '') + '</span><span class="mp mp-b">💊 Topiramato 100mg</span><span class="mp mp-g">💊 Magnésio 500mg</span>';
+        return '<span class="mp mp-v">💊 Cabergolina 0,5mg' + (extra ? ' +extra' : '') + '</span><span class="mp mp-b">💊 Topiramato 100mg</span><span class="mp mp-g">💊 Cloreto de Magnésio</span>';
       }
     } else {
       if (time === '09:30' && /Café/i.test(mealName || '')) return '<span class="mp mp-r">💊 Citalopram 20mg</span><span class="mp mp-g">💊 Colágeno 10g</span>';
