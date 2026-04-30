@@ -7161,7 +7161,7 @@ NutritionApp.prototype.renderD = function(){
       return out;
     }
 
-    h += buildPrepCards('👨‍🍳 Meal Prep — ' + myName + ' (Cardápio ' + this.cW + ')', 'Visual preservado por usuário, com foco em montagem e armazenamento.', myPrep);
+    h += buildPrepCards('👨‍🍳 Meal Prep — ' + myName + ' (Cardápio ' + this.cW + ')', 'Montagem semanal por usuário.', myPrep);
     h += buildPrepCards('👩‍🍳 Meal Prep — ' + otherName + ' (Cardápio ' + otherApp.cW + ')', 'Outro plano aberto na mesma visão, mantido integralmente para referência.', otherPrep);
 
     h += '<div class="prep-section"><div class="prep-header" onclick="togglePrep(this)"><span>📊 Soma consolidada — Seg a Sex</span><span class="chevron">▼</span></div><div class="prep-body"><div class="sum-grid">';
@@ -7952,25 +7952,25 @@ NutritionApp.prototype.renderD = function(){
   const PERSONS = {
     rodrigo:{
       key:'rodrigo', px:'r', icon:'💪', label:'Rodrigo', meta:'Nutrição + treino · definição', headline:'Plano completo de Rodrigo',
-      subtitle:'Cardápios, meal prep, compras, medicações, TACO e treino organizados em uma interface única.',
-      colors:['#059669','#10b981'], W: safeRef('R_W'), workouts:safeRef('R_WORKOUTS'), phases:safeRef('R_EX_PHASES'), app:safeRef('R'),
+      subtitle:'Cardápios, meal prep, compras, medicações, TACO e treino.',
+      colors:['#059669','#10b981'], plan:{start:[2026,2,2], totalWeeks:44}, W: safeRef('R_W'), workouts:safeRef('R_WORKOUTS'), phases:safeRef('R_EX_PHASES'), app:safeRef('R'),
       legacy:{overview:'r-t-resumo', meds:'r-t-meds', taco:'r-t-taco'}
     },
     marlene:{
       key:'marlene', px:'m', icon:'🌸', label:'Marlene', meta:'Nutrição + exercícios · bem-estar', headline:'Plano completo de Marlene',
-      subtitle:'Rotina alimentar, preparo semanal, lista de compras, suplementos/medicações e exercícios de baixo impacto.',
-      colors:['#d46a8a','#b08dd4'], W:safeRef('M_W'), workouts:safeRef('M_WORKOUTS'), phases:safeRef('M_EX_PHASES'), app:safeRef('M'),
+      subtitle:'Rotina alimentar, preparo semanal, lista de compras, suplementos/medicações e exercícios.',
+      colors:['#d46a8a','#b08dd4'], plan:{start:[2026,2,9], totalWeeks:26}, W:safeRef('M_W'), workouts:safeRef('M_WORKOUTS'), phases:safeRef('M_EX_PHASES'), app:safeRef('M'),
       legacy:{overview:'m-t-resumo', meds:'m-t-meds', taco:'m-t-taco'}
     },
     ivo:{
       key:'ivo', px:'i', icon:'🏃', label:'Ivo', meta:'Exercícios · vitalidade', headline:'Plano de exercícios do Ivo',
-      subtitle:'Treinos organizados por fases, dias, equipamentos e passo a passo de execução.',
+      subtitle:'Treinos por fases, dias, equipamentos e passo a passo.',
       colors:['#1e40af','#3b82f6'], W:null, workouts:safeRef('IVO_WORKOUTS'), phases:safeRef('IVO_EX_PHASES'), app:safeRef('I'),
       legacy:{}
     },
     rafael:{
       key:'rafael', px:'rf', icon:'🥊', label:'Rafael', meta:'Treino · hipertrofia', headline:'Plano de treino do Rafael',
-      subtitle:'Treinos com foco em técnica, progressão, organização dos equipamentos e execução guiada.',
+      subtitle:'Treinos com foco em técnica, progressão e execução guiada.',
       colors:['#ea580c','#f97316'], W:null, workouts:safeRef('RAFAEL_WORKOUTS'), phases:safeRef('RAFAEL_EX_PHASES'), app:safeRef('Rf'),
       legacy:{}
     }
@@ -7984,6 +7984,7 @@ NutritionApp.prototype.renderD = function(){
     exPhase: localStorage.getItem('xv2.exPhase') || '1',
     exDay: localStorage.getItem('xv2.exDay') || DAY_NAMES[Math.max(0,(new Date().getDay()+6)%7)] || DAY_NAMES[0],
     search: '',
+    menuAutoApplied:false,
     workout:{open:false, person:null, phase:null, day:null, exercises:[], index:0, set:1, completed:0}
   };
 
@@ -8059,6 +8060,54 @@ NutritionApp.prototype.renderD = function(){
     return Object.keys(cfg.workouts || {}).sort((a,b)=>Number(a)-Number(b));
   }
 
+  function todayMidnight(){
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  }
+
+  function detectPlanContext(cfg){
+    if(!cfg || !cfg.W || !cfg.plan || !Array.isArray(cfg.plan.start)) return null;
+    const types = getCardKeys(cfg);
+    if(!types.length) return null;
+    const s = new Date(cfg.plan.start[0], cfg.plan.start[1], cfg.plan.start[2]);
+    const start = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+    const diff = Math.round((todayMidnight() - start) / 864e5);
+    const totalWeeks = cfg.plan.totalWeeks || types.length;
+    const safeDiff = Math.max(0, Math.min(diff, (totalWeeks * 7) - 1));
+    const weekIndex = Math.floor(safeDiff / 7);
+    const dayIndex = Math.max(0, Math.min(safeDiff % 7, DAY_NAMES.length - 1));
+    const type = types[weekIndex % types.length] || types[0];
+    const weekStart = new Date(start.getTime() + weekIndex * 7 * 864e5);
+    const weekEnd = new Date(weekStart.getTime() + 6 * 864e5);
+    return {
+      card:type,
+      day:DAY_NAMES[dayIndex] || DAY_NAMES[0],
+      dayIndex:dayIndex,
+      weekNumber:weekIndex + 1,
+      cycle:Math.floor(weekIndex / types.length) + 1,
+      start:weekStart,
+      end:weekEnd,
+      clamped:diff !== safeDiff
+    };
+  }
+
+  function fmtDateBR(date){
+    if(!(date instanceof Date) || isNaN(date)) return '';
+    return String(date.getDate()).padStart(2,'0') + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + date.getFullYear();
+  }
+
+  function applyCurrentPlanContext(force){
+    const cfg = getCfg();
+    const ctx = detectPlanContext(cfg);
+    if(!ctx) return null;
+    if(force || !state.menuAutoApplied){
+      state.card = ctx.card;
+      state.day = ctx.day;
+      state.menuAutoApplied = true;
+    }
+    return ctx;
+  }
+
   function init(){
     if(location.search.includes('legacy=1')) return;
     document.body.classList.add('xv2-ready');
@@ -8071,6 +8120,7 @@ NutritionApp.prototype.renderD = function(){
 
     root.addEventListener('click', onClick);
     root.addEventListener('input', onInput);
+    applyCurrentPlanContext(true);
     document.addEventListener('keydown', function(ev){
       if(ev.key === 'Escape') closeWorkout();
     });
@@ -8092,7 +8142,7 @@ NutritionApp.prototype.renderD = function(){
         <aside class="xv2-side">
           <div class="xv2-brand">
             <div class="xv2-brand-mark">🍽️</div>
-            <div><h1>Plano Nutricional + Treino</h1><p>Interface refatorada · dados preservados</p></div>
+            <div><h1>Plano Nutricional + Treino</h1><p>Rotina familiar personalizada</p></div>
           </div>
           <div class="xv2-person-grid">${Object.values(PERSONS).map(renderPersonButton).join('')}</div>
           <nav class="xv2-nav">${tabs.map(renderTabButton).join('')}</nav>
@@ -8142,7 +8192,7 @@ NutritionApp.prototype.renderD = function(){
     if(state.tab === 'shop') return renderShop(cfg);
     if(state.tab === 'exercises') return renderExercises(cfg);
     if(state.tab === 'meds') return renderLegacy(cfg.legacy.meds, '💊 Protocolo, suplementos e medicações');
-    if(state.tab === 'taco') return renderLegacy(cfg.legacy.taco, '📊 Tabela TACO preservada');
+    if(state.tab === 'taco') return renderLegacy(cfg.legacy.taco, '📊 Tabela TACO');
     if(state.tab === 'search') return renderSearch(cfg);
     if(state.tab === 'data') return renderData(cfg);
     return renderOverview(cfg);
@@ -8151,26 +8201,28 @@ NutritionApp.prototype.renderD = function(){
   function renderOverview(cfg){
     const inv = inventory(cfg);
     const legacy = cfg.legacy && cfg.legacy.overview ? renderLegacy(cfg.legacy.overview, '', true) : '';
-    const hasNutrition = !!cfg.W;
+    const ctx = detectPlanContext(cfg);
     return `
       <div class="xv2-stat-grid">
         <div class="xv2-stat"><strong>${inv.cards}</strong><span>cardápios</span></div>
-        <div class="xv2-stat"><strong>${inv.meals}</strong><span>refeições cadastradas</span></div>
+        <div class="xv2-stat"><strong>${inv.meals}</strong><span>refeições</span></div>
         <div class="xv2-stat"><strong>${inv.workouts}</strong><span>dias de treino</span></div>
-        <div class="xv2-stat"><strong>${inv.exercises}</strong><span>exercícios/etapas</span></div>
+        <div class="xv2-stat"><strong>${inv.exercises}</strong><span>exercícios</span></div>
       </div>
       <div class="xv2-grid">
-        <div class="xv2-card span-4">
-          <div class="xv2-card-title"><div><h3>📌 Estrutura preservada</h3><p>Os dados originais continuam cadastrados no arquivo e são lidos pela nova interface.</p></div></div>
+        ${ctx ? `<div class="xv2-card span-4">
+          <div class="xv2-card-title"><div><h3>📅 Hoje no plano</h3><p>Semana ${ctx.weekNumber} · Cardápio ${esc(ctx.card)} · ${esc(ctx.day)}</p></div></div>
           <div class="xv2-pillbar">
-            <span class="xv2-chip">👤 ${esc(cfg.label)}</span>
-            ${hasNutrition ? '<span class="xv2-chip">🍽️ Nutrição</span><span class="xv2-chip">👨‍🍳 Meal prep</span><span class="xv2-chip">🛒 Listas</span>' : ''}
-            ${cfg.workouts ? '<span class="xv2-chip">🏋️ Treinos</span>' : ''}
+            <span class="xv2-chip">${fmtDateBR(ctx.start)} a ${fmtDateBR(ctx.end)}</span>
+            <span class="xv2-chip">Ciclo ${ctx.cycle}</span>
           </div>
-        </div>
-        <div class="xv2-card span-8">
-          <div class="xv2-card-title"><div><h3>✨ Como usar agora</h3><p>Selecione a pessoa, escolha a área no menu lateral ou inferior e navegue por cardápios, dias e fases sem depender da tela antiga.</p></div></div>
-          <p style="color:var(--xv2-muted);line-height:1.6;margin:0">A apresentação foi reorganizada para reduzir cliques perdidos, evitar conflito visual entre cards e manter a leitura confortável em celular, tablet e desktop. Quando houver conteúdo original importante em HTML, ele é exibido em blocos preservados abaixo.</p>
+        </div>` : ''}
+        <div class="xv2-card ${ctx ? 'span-8' : ''}">
+          <div class="xv2-card-title"><div><h3>${esc(cfg.label)}</h3><p>${esc(cfg.meta)}</p></div></div>
+          <div class="xv2-pillbar">
+            ${cfg.W ? '<button class="xv2-btn" data-tab="menus">🍽️ Cardápio de hoje</button><button class="xv2-btn" data-tab="prep">👨‍🍳 Meal prep</button><button class="xv2-btn" data-tab="shop">🛒 Lista</button>' : ''}
+            ${cfg.workouts ? '<button class="xv2-btn primary" data-tab="exercises">🏋️ Treino</button>' : ''}
+          </div>
         </div>
         ${legacy ? `<div class="xv2-card">${legacy}</div>` : ''}
       </div>
@@ -8178,7 +8230,8 @@ NutritionApp.prototype.renderD = function(){
   }
 
   function renderMenus(cfg){
-    if(!cfg.W) return empty('Este perfil não possui cardápios cadastrados no arquivo atual.');
+    if(!cfg.W) return empty('Este perfil não possui cardápios cadastrados.');
+    const ctx = applyCurrentPlanContext(false) || detectPlanContext(cfg);
     const keys = getCardKeys(cfg);
     const week = cfg.W[state.card] || {};
     const meals = ((week.days || {})[state.day]) || [];
@@ -8186,7 +8239,7 @@ NutritionApp.prototype.renderD = function(){
     const prot = meals.reduce((s,m)=>s + Number(m.prot || 0),0);
     return `
       <div class="xv2-card">
-        <div class="xv2-card-title"><div><h3>🍽️ Cardápios semanais</h3><p>${esc(week.info || 'Selecione um cardápio e um dia para visualizar as refeições.')}</p></div></div>
+        <div class="xv2-card-title"><div><h3>🍽️ Cardápio ${esc(state.card)} · ${esc(state.day)}</h3><p>${ctx ? `Semana ${ctx.weekNumber} · ${fmtDateBR(ctx.start)} a ${fmtDateBR(ctx.end)} · Ciclo ${ctx.cycle}` : esc(week.info || '')}</p></div></div>
         <div class="xv2-filterbar">${keys.map(k=>`<button class="xv2-pill ${state.card===k?'active':''}" data-card="${k}">Cardápio ${esc(k)}</button>`).join('')}</div>
         <div class="xv2-filterbar">${DAY_NAMES.map((d,i)=>`<button class="xv2-pill ${state.day===d?'active':''}" data-day="${d}">${DAY_SHORT[i] || d}</button>`).join('')}</div>
         <div class="xv2-day-total"><span class="xv2-macro">🔥 ${kcal} kcal</span><span class="xv2-macro">💪 ${prot}g proteína</span><span class="xv2-chip">📅 ${esc(state.day)}</span></div>
@@ -8212,7 +8265,7 @@ NutritionApp.prototype.renderD = function(){
       ${renderFoodLines(meal.food)}
       ${meds ? `<div class="xv2-meds-inline">${meds}</div>` : ''}
       <details class="xv2-details">
-        <summary>↻ Opções de troca preservadas</summary>
+        <summary>↻ Opções de troca</summary>
         <div class="xv2-details-body">
           <p><strong>Opção 2:</strong> ${esc(meal.sub1 || 'Sem substituição cadastrada')}</p>
           ${meal.sub2 && meal.sub2 !== 'Sem substituição' ? `<p><strong>Opção 3:</strong> ${esc(meal.sub2)}</p>` : ''}
@@ -8250,7 +8303,7 @@ NutritionApp.prototype.renderD = function(){
     const prep = ((cfg.W[state.card] || {}).prep) || [];
     return `
       <div class="xv2-card">
-        <div class="xv2-card-title"><div><h3>👨‍🍳 Meal prep</h3><p>Preparo semanal preservado do cardápio selecionado, com leitura por item, modo de preparo e destino.</p></div></div>
+        <div class="xv2-card-title"><div><h3>👨‍🍳 Meal prep · Cardápio ${esc(state.card)}</h3></div></div>
         <div class="xv2-filterbar">${keys.map(k=>`<button class="xv2-pill ${state.card===k?'active':''}" data-card="${k}">Cardápio ${esc(k)}</button>`).join('')}</div>
       </div>
       ${prep.length ? `<div class="xv2-prep-grid">${prep.map(p=>`<article class="xv2-prep"><h4>${iconForText(p.item)} ${esc(p.item)}</h4><p><strong>Preparo:</strong> ${esc(p.modo)}</p><p><strong>Destino:</strong> ${esc(p.dest)}</p></article>`).join('')}</div>` : empty('Nenhum item de meal prep cadastrado neste cardápio.')}
@@ -8263,7 +8316,7 @@ NutritionApp.prototype.renderD = function(){
     const shop = ((cfg.W[state.card] || {}).shop) || [];
     return `
       <div class="xv2-card">
-        <div class="xv2-card-title"><div><h3>🛒 Listas de compras</h3><p>Lista original preservada por categoria. Os checkboxes são apenas apoio visual para uso no mercado.</p></div></div>
+        <div class="xv2-card-title"><div><h3>🛒 Lista de compras · Cardápio ${esc(state.card)}</h3></div></div>
         <div class="xv2-filterbar">${keys.map(k=>`<button class="xv2-pill ${state.card===k?'active':''}" data-card="${k}">Cardápio ${esc(k)}</button>`).join('')}</div>
       </div>
       ${shop.length ? `<div class="xv2-shop-grid">${shop.map((sec,idx)=>renderShopCategory(sec,idx)).join('')}</div>` : empty('Nenhuma lista cadastrada neste cardápio.')}
@@ -8340,7 +8393,7 @@ NutritionApp.prototype.renderD = function(){
     const clone = src.cloneNode(true);
     clone.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
     clone.removeAttribute('id');
-    const html = `<div class="xv2-legacy">${title ? `<div class="xv2-card-title"><div><h3>${esc(title)}</h3><p>Conteúdo HTML original preservado e reestilizado para a nova interface.</p></div></div>` : ''}${clone.outerHTML}</div>`;
+    const html = `<div class="xv2-legacy">${title ? `<div class="xv2-card-title"><div><h3>${esc(title)}</h3></div></div>` : ''}${clone.outerHTML}</div>`;
     return noCard ? html : `<div class="xv2-card">${html}</div>`;
   }
 
@@ -8348,11 +8401,11 @@ NutritionApp.prototype.renderD = function(){
     const q = state.search.trim();
     const results = q ? searchData(cfg, q).slice(0,60) : [];
     return `<div class="xv2-card">
-      <div class="xv2-card-title"><div><h3>🔎 Busca rápida</h3><p>Pesquisa nos dados cadastrados do perfil selecionado: cardápios, substituições, preparo, listas, fases e treinos.</p></div></div>
+      <div class="xv2-card-title"><div><h3>🔎 Busca rápida</h3></div></div>
       <input class="xv2-searchbox" data-search="1" value="${esc(state.search)}" placeholder="Digite alimento, exercício, medicamento, equipamento, horário...">
     </div>
     <div id="xv2-search-results">
-      ${q ? (results.length ? results.map(r=>`<div class="xv2-result"><strong>${esc(r.path)}</strong><p>${esc(r.text)}</p></div>`).join('') : empty('Nenhum resultado encontrado neste perfil.')) : empty('Digite algo para pesquisar nos dados deste perfil.')}
+      ${q ? (results.length ? results.map(r=>`<div class="xv2-result"><strong>${esc(r.path)}</strong><p>${esc(r.text)}</p></div>`).join('') : empty('Nenhum resultado encontrado.')) : empty('Digite para pesquisar.')}
     </div>`;
   }
 
@@ -8387,7 +8440,7 @@ NutritionApp.prototype.renderD = function(){
   function renderData(cfg){
     const inv = inventory(cfg);
     const blocks = [];
-    if(cfg.W) blocks.push(['Base de cardápios / meal prep / listas', cfg.W]);
+    if(cfg.W) blocks.push(['Cardápios / meal prep / listas', cfg.W]);
     if(cfg.workouts) blocks.push(['Base de treinos', cfg.workouts]);
     if(cfg.phases) blocks.push(['Fases de treino', cfg.phases]);
 
@@ -8403,7 +8456,7 @@ NutritionApp.prototype.renderD = function(){
     </div>
     <div class="xv2-grid">
       <div class="xv2-card">
-        <div class="xv2-card-title"><div><h3>🗃️ Dados completos preservados</h3><p>Estes blocos mostram a base original usada pela nova interface. Ficam recolhidos para não pesar a leitura, mas continuam disponíveis no próprio arquivo.</p></div></div>
+        <div class="xv2-card-title"><div><h3>🗃️ Base completa</h3></div></div>
         ${blocks.map(([title,obj])=>`<details class="xv2-details"><summary>${esc(title)}</summary><div class="xv2-details-body"><pre class="xv2-pre">${esc(JSON.stringify(obj,null,2))}</pre></div></details>`).join('')}
       </div>
     </div>`;
@@ -8440,24 +8493,29 @@ NutritionApp.prototype.renderD = function(){
     if(person){
       state.person = person.dataset.person;
       state.tab = PERSONS[state.person].W ? 'overview' : 'exercises';
+      state.menuAutoApplied = false;
+      applyCurrentPlanContext(true);
       draw();
       return;
     }
     const tab = ev.target.closest('[data-tab]');
     if(tab){
       state.tab = tab.dataset.tab;
+      if(['menus','prep','shop'].includes(state.tab)){ state.menuAutoApplied = false; applyCurrentPlanContext(true); }
       draw();
       return;
     }
     const card = ev.target.closest('[data-card]');
     if(card){
       state.card = card.dataset.card;
+      state.menuAutoApplied = true;
       draw();
       return;
     }
     const day = ev.target.closest('[data-day]');
     if(day){
       state.day = day.dataset.day;
+      state.menuAutoApplied = true;
       draw();
       return;
     }
@@ -8507,7 +8565,7 @@ NutritionApp.prototype.renderD = function(){
       if(box){
         const q = state.search.trim();
         const results = q ? searchData(cfg, q).slice(0,60) : [];
-        box.innerHTML = q ? (results.length ? results.map(r=>`<div class="xv2-result"><strong>${esc(r.path)}</strong><p>${esc(r.text)}</p></div>`).join('') : empty('Nenhum resultado encontrado neste perfil.')) : empty('Digite algo para pesquisar nos dados deste perfil.');
+        box.innerHTML = q ? (results.length ? results.map(r=>`<div class="xv2-result"><strong>${esc(r.path)}</strong><p>${esc(r.text)}</p></div>`).join('') : empty('Nenhum resultado encontrado.')) : empty('Digite para pesquisar.');
       }
     }
   }
