@@ -8898,5 +8898,269 @@ NutritionApp.prototype.renderD = function(){
 })();
 </script>
 
+
+<!-- ===== V12 — Redesign: organização, hierarquia, consistência visual e mobile ===== -->
+<style id="v12-redesign">
+  /* 1. Recalibração dos tokens: acalma todo o sistema de uma vez (paleta, sombras, linhas, raio) */
+  :root{
+    --xv2-bg:#f5f7fb;
+    --xv2-surface:#ffffff;
+    --xv2-surface-2:#f7f9fc;
+    --xv2-text:#0f172a;
+    --xv2-muted:#667085;
+    --xv2-soft:#eef2f7;
+    --xv2-line:#e7ecf3;
+    --xv2-primary-2:#1e293b;
+    --xv2-danger:#e5484d;
+    --xv2-warning:#e0900b;
+    --xv2-radius:20px;
+    --xv2-shadow:0 12px 32px rgba(15,23,42,.07);
+    --xv2-shadow-soft:0 4px 16px rgba(15,23,42,.05);
+  }
+  body.xv2-dark{
+    --xv2-bg:#0a1120;
+    --xv2-surface:#121a2b;
+    --xv2-surface-2:#0e1626;
+    --xv2-text:#f1f5f9;
+    --xv2-muted:#93a1b5;
+    --xv2-soft:#1b2536;
+    --xv2-line:#22304a;
+    --xv2-primary-2:#dbe6ff;
+    --xv2-shadow:0 14px 36px rgba(0,0,0,.42);
+    --xv2-shadow-soft:0 6px 18px rgba(0,0,0,.30);
+  }
+
+  /* 2. Fundo calmo e renderização nítida */
+  #xv2-app{
+    background:
+      radial-gradient(1100px 460px at 50% -280px, color-mix(in srgb,var(--xv2-primary) 11%,transparent), transparent),
+      var(--xv2-bg)!important;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* 3. Acessibilidade: foco visível e respeito a movimento reduzido */
+  #xv2-app button:focus-visible,
+  #xv2-app a:focus-visible,
+  #xv2-app input:focus-visible,
+  #xv2-app summary:focus-visible{
+    outline:2px solid var(--xv2-primary);
+    outline-offset:2px;
+    border-radius:10px;
+  }
+  @media (prefers-reduced-motion:reduce){
+    #xv2-app *{animation:none!important;transition:none!important}
+    html{scroll-behavior:auto!important}
+  }
+
+  /* 4. Cabeçalho da página: tipografia mais legível e divisória estrutural */
+  #xv2-app .xv2-hero{
+    align-items:end;
+    gap:16px;
+    margin-bottom:18px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--xv2-line);
+  }
+  #xv2-app .xv2-hero h2{
+    font-size:clamp(24px,3.2vw,34px);
+    letter-spacing:-.02em;
+    line-height:1.05;
+    font-weight:800;
+  }
+  #xv2-app .xv2-hero p{font-size:14px;margin-top:8px;line-height:1.55}
+  #xv2-app .xv2-kicker{
+    background:color-mix(in srgb,var(--xv2-primary) 8%,var(--xv2-surface));
+    border-color:color-mix(in srgb,var(--xv2-primary) 18%,var(--xv2-line));
+    color:var(--xv2-primary-2);
+    font-weight:700;
+  }
+  body.xv2-dark #xv2-app .xv2-kicker{color:#fff}
+
+  /* 5. Marca e navegação lateral */
+  #xv2-app .xv2-brand-mark{
+    border-radius:14px;
+    box-shadow:0 8px 20px color-mix(in srgb,var(--xv2-primary) 22%,transparent);
+  }
+  #xv2-app .xv2-brand h1{font-weight:800}
+  #xv2-app .xv2-tab{font-weight:700;font-size:13px}
+  #xv2-app .xv2-tab.active{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--xv2-primary) 26%,transparent)}
+  #xv2-app .xv2-person-name{font-weight:800}
+
+  /* 6. Cartões: padding, raio e sombra consistentes; títulos calmos */
+  #xv2-app .xv2-card{padding:18px;border-radius:var(--xv2-radius);box-shadow:var(--xv2-shadow-soft)}
+  #xv2-app .xv2-grid{gap:16px}
+  #xv2-app .xv2-card-title{margin-bottom:12px;align-items:center}
+  #xv2-app .xv2-card-title h3{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  #xv2-app .xv2-card-title p{font-size:12.5px;line-height:1.45}
+
+  /* 7. Indicadores numéricos */
+  #xv2-app .xv2-stat{border-radius:16px;box-shadow:var(--xv2-shadow-soft)}
+  #xv2-app .xv2-stat strong{font-size:22px;letter-spacing:-.03em}
+  #xv2-app .xv2-stat span{font-size:10.5px}
+
+  /* 8. Refeições e macros mais discretos */
+  #xv2-app .xv2-meal{border-radius:16px;padding:15px;border-left-width:5px;box-shadow:var(--xv2-shadow-soft)}
+  #xv2-app .xv2-meal h4{font-size:15px}
+  #xv2-app .xv2-macro{box-shadow:none;font-size:13px;padding:9px 13px;border-radius:13px}
+  #xv2-app .xv2-chip{font-weight:700}
+  #xv2-app .xv2-day-total{gap:8px}
+
+  /* 9. Preparo, compras, exercícios e treino */
+  #xv2-app .xv2-prep,#xv2-app .xv2-shop-cat,#xv2-app .xv2-exercise{border-radius:16px;box-shadow:var(--xv2-shadow-soft)}
+  #xv2-app .xv2-workout-head h3{font-size:20px;letter-spacing:-.02em}
+  #xv2-app .xv2-pill{font-weight:700}
+  #xv2-app .xv2-tip{line-height:1.55}
+
+  /* 10. Blocos legados (resumo, medicamentos, taco): aparência nativa */
+  #xv2-app .xv2-legacy{display:grid;gap:14px}
+  #xv2-app .xv2-legacy .tc{padding:0!important;display:grid!important;gap:14px!important;animation:none!important}
+  #xv2-app .xv2-legacy .rh{
+    background:linear-gradient(135deg,var(--xv2-primary),var(--xv2-accent))!important;
+    color:#fff!important;border:0!important;border-radius:18px!important;padding:18px!important;
+    box-shadow:var(--xv2-shadow-soft)!important;
+  }
+  #xv2-app .xv2-legacy .rh h2{margin:0 0 4px!important;font-size:18px!important;letter-spacing:-.02em!important;color:#fff!important}
+  #xv2-app .xv2-legacy .rh p{margin:0!important;font-size:12.5px!important;color:rgba(255,255,255,.86)!important}
+  #xv2-app .xv2-legacy .rs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-top:14px!important}
+  #xv2-app .xv2-legacy .rst{background:rgba(255,255,255,.14)!important;border:1px solid rgba(255,255,255,.20)!important;border-radius:14px!important;padding:10px!important;text-align:center!important}
+  #xv2-app .xv2-legacy .rst-v{font-size:18px!important;font-weight:800!important;color:#fff!important;line-height:1.1!important}
+  #xv2-app .xv2-legacy .rst-l{font-size:10px!important;color:rgba(255,255,255,.82)!important;text-transform:uppercase;letter-spacing:.04em;margin-top:3px!important}
+  #xv2-app .xv2-legacy .rpg{margin-top:14px!important;background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.20)!important;border-radius:14px!important;padding:12px!important}
+  #xv2-app .xv2-legacy .rpg *{color:#fff!important}
+  #xv2-app .xv2-legacy .pb{height:10px!important;background:rgba(255,255,255,.26)!important;border-radius:999px!important;overflow:hidden!important;margin:8px 0!important}
+  #xv2-app .xv2-legacy .pf{height:100%!important;background:#fff!important;border-radius:999px!important}
+  #xv2-app .xv2-legacy .rg{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+  #xv2-app .xv2-legacy .rc{background:var(--xv2-surface)!important;border:1px solid var(--xv2-line)!important;border-radius:16px!important;padding:14px!important;box-shadow:var(--xv2-shadow-soft)!important}
+  #xv2-app .xv2-legacy .rc h4{margin:0 0 6px!important;font-size:13px!important;font-weight:800!important;color:var(--xv2-text)!important}
+  #xv2-app .xv2-legacy .rc p{margin:0!important;font-size:13px!important;color:var(--xv2-text)!important;line-height:1.5!important}
+  #xv2-app .xv2-legacy .rc p span{color:var(--xv2-muted)!important}
+  #xv2-app .xv2-legacy .card{background:var(--xv2-surface)!important;border:1px solid var(--xv2-line)!important;border-radius:16px!important;padding:15px!important;box-shadow:var(--xv2-shadow-soft)!important;color:var(--xv2-text)!important}
+  #xv2-app .xv2-legacy .card-title{margin:0 0 12px!important;font-size:14px!important;font-weight:800!important;color:var(--xv2-text)!important;display:block!important;background:none!important}
+  #xv2-app .xv2-legacy .rtg{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+  #xv2-app .xv2-legacy .rt{
+    background:color-mix(in srgb,var(--xv2-danger) 10%,var(--xv2-surface))!important;
+    border:1px solid color-mix(in srgb,var(--xv2-danger) 26%,var(--xv2-line))!important;
+    color:color-mix(in srgb,var(--xv2-danger) 62%,var(--xv2-text))!important;
+    padding:7px 10px!important;border-radius:999px!important;font-size:12px!important;font-weight:700!important;
+  }
+  /* Medicamentos */
+  #xv2-app .xv2-legacy .ms{background:var(--xv2-surface-2)!important;border:1px solid var(--xv2-line)!important;border-radius:14px!important;padding:12px!important;margin:0!important}
+  #xv2-app .xv2-legacy .ms h3{margin:0 0 8px!important;font-size:13px!important;font-weight:800!important;color:var(--xv2-primary-2)!important}
+  body.xv2-dark #xv2-app .xv2-legacy .ms h3{color:#fff!important}
+  #xv2-app .xv2-legacy .mr{display:flex!important;justify-content:space-between!important;gap:10px!important;align-items:flex-start!important;background:var(--xv2-surface)!important;border:1px solid var(--xv2-line)!important;border-radius:12px!important;padding:10px 12px!important;margin:0 0 8px!important}
+  #xv2-app .xv2-legacy .mr:last-child{margin-bottom:0!important}
+  #xv2-app .xv2-legacy .mr-i{min-width:0!important}
+  #xv2-app .xv2-legacy .mr-n{font-size:13px!important;font-weight:800!important;color:var(--xv2-text)!important}
+  #xv2-app .xv2-legacy .mr-d{font-size:12px!important;color:var(--xv2-muted)!important;line-height:1.5!important;margin-top:3px!important}
+  #xv2-app .xv2-legacy .mr-p{flex:none!important;font-size:12px!important;font-weight:800!important;color:var(--xv2-primary)!important;background:color-mix(in srgb,var(--xv2-primary) 10%,var(--xv2-surface))!important;border:1px solid color-mix(in srgb,var(--xv2-primary) 22%,var(--xv2-line))!important;border-radius:999px!important;padding:5px 9px!important;white-space:nowrap!important;height:fit-content!important}
+  #xv2-app .xv2-legacy .alert{display:flex!important;gap:10px!important;align-items:flex-start!important;background:color-mix(in srgb,var(--xv2-warning) 12%,var(--xv2-surface))!important;border:1px solid color-mix(in srgb,var(--xv2-warning) 30%,var(--xv2-line))!important;border-radius:14px!important;padding:12px 14px!important;color:var(--xv2-text)!important;font-size:13px!important;line-height:1.5!important}
+  #xv2-app .xv2-legacy .alert strong{color:var(--xv2-text)!important}
+  /* Tabela TACO e legendas */
+  #xv2-app .xv2-legacy .tr{display:flex!important;justify-content:space-between!important;gap:10px!important;padding:9px 0!important;border-bottom:1px solid var(--xv2-line)!important;color:var(--xv2-muted)!important;font-size:13px!important}
+  #xv2-app .xv2-legacy .tv{color:var(--xv2-text)!important;font-weight:700!important}
+  #xv2-app .xv2-legacy .li{display:flex!important;align-items:center!important;gap:8px!important;font-size:12px!important;color:var(--xv2-muted)!important}
+  #xv2-app .xv2-legacy .lc{background:var(--xv2-surface-2)!important;color:var(--xv2-primary-2)!important;border:1px solid var(--xv2-line)!important;border-radius:8px!important;padding:2px 6px!important}
+  body.xv2-dark #xv2-app .xv2-legacy .lc{color:#fff!important}
+  #xv2-app .xv2-legacy .dp{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+  #xv2-app .xv2-legacy .dpi{border:1px solid var(--xv2-line)!important;background:var(--xv2-surface)!important;color:var(--xv2-text)!important;border-radius:999px!important;padding:7px 11px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important}
+
+  /* 11. Faixa única do dia (substitui o banner repetido) */
+  #v11-trainbanner{display:none!important}
+  #v12-daystrip{
+    grid-column:1 / -1;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    background:var(--xv2-surface);
+    border:1px solid var(--xv2-line);
+    border-radius:16px;
+    padding:12px 14px;
+    box-shadow:var(--xv2-shadow-soft);
+    margin-top:2px;
+  }
+  #v12-daystrip .ds-ic{width:38px;height:38px;flex:none;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:18px;background:linear-gradient(135deg,var(--xv2-primary),var(--xv2-accent))}
+  #v12-daystrip.live .ds-ic{background:linear-gradient(135deg,#0f9d8f,var(--xv2-accent))}
+  #v12-daystrip .ds-tx{flex:1;min-width:170px}
+  #v12-daystrip .ds-tt{font-size:13px;font-weight:800;color:var(--xv2-text);letter-spacing:-.01em}
+  #v12-daystrip .ds-sb{font-size:12px;color:var(--xv2-muted);margin-top:2px;line-height:1.4}
+  #v12-daystrip .ds-cd{display:flex;gap:7px;flex:none}
+  #v12-daystrip .ds-pill{min-width:46px;text-align:center;background:var(--xv2-surface-2);border:1px solid var(--xv2-line);border-radius:12px;padding:6px 8px}
+  #v12-daystrip .ds-pn{font-size:16px;font-weight:800;color:var(--xv2-text);line-height:1}
+  #v12-daystrip .ds-pl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--xv2-muted);margin-top:3px}
+
+  /* 12. Polimento mobile */
+  @media (max-width:880px){
+    #xv2-app .xv2-hero{padding-bottom:14px;margin-bottom:16px}
+    #xv2-app .xv2-person-meta{font-size:10.5px}
+  }
+  @media (max-width:560px){
+    #xv2-app .xv2-hero h2{font-size:26px}
+    #xv2-app .xv2-legacy .rs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    #xv2-app .xv2-legacy .rg{grid-template-columns:1fr!important}
+    #xv2-app .xv2-macro{padding:8px 11px;font-size:12px}
+    #v12-daystrip{padding:11px 12px}
+    #v12-daystrip .ds-cd{width:100%;justify-content:flex-start;margin-top:2px}
+  }
+</style>
+
+<script id="v12-redesign-script">
+(function(){
+  'use strict';
+  var TARGET = new Date(2026,5,15,0,0,0,0); // 15/06/2026 00:00 local
+  function two(n){return (n<10?'0':'')+n;}
+  function build(){
+    var now = new Date();
+    var diff = TARGET.getTime() - now.getTime();
+    if(diff > 0){
+      var d = Math.floor(diff/86400000);
+      var h = Math.floor((diff%86400000)/3600000);
+      var m = Math.floor((diff%3600000)/60000);
+      return {live:false, html:
+        '<div class="ds-ic">🗓️</div>'
+        + '<div class="ds-tx"><div class="ds-tt">Treinos começam em breve</div>'
+        + '<div class="ds-sb">Início de todos os planos · 15/06/2026</div></div>'
+        + '<div class="ds-cd">'
+        + '<div class="ds-pill"><div class="ds-pn">'+d+'</div><div class="ds-pl">dias</div></div>'
+        + '<div class="ds-pill"><div class="ds-pn">'+two(h)+'</div><div class="ds-pl">horas</div></div>'
+        + '<div class="ds-pill"><div class="ds-pn">'+two(m)+'</div><div class="ds-pl">min</div></div>'
+        + '</div>'
+      };
+    }
+    var dias = Math.floor((now.getTime()-TARGET.getTime())/86400000)+1;
+    return {live:true, html:
+      '<div class="ds-ic">✅</div>'
+      + '<div class="ds-tx"><div class="ds-tt">Treino em andamento</div>'
+      + '<div class="ds-sb">Programa iniciado em 15/06/2026 · usando os equipamentos que você tem em casa</div></div>'
+      + '<div class="ds-cd"><div class="ds-pill"><div class="ds-pn">'+dias+'</div><div class="ds-pl">dia</div></div></div>'
+    };
+  }
+  var rafPending = 0;
+  function tick(){
+    var hero = document.querySelector('#xv2-app .xv2-hero');
+    if(!hero) return;
+    var s = document.getElementById('v12-daystrip');
+    if(!s){ s = document.createElement('div'); s.id='v12-daystrip'; hero.appendChild(s); }
+    var data = build();
+    s.className = data.live ? 'live' : '';
+    s.innerHTML = data.html;
+  }
+  function schedule(){
+    if(rafPending) return;
+    rafPending = requestAnimationFrame(function(){ rafPending=0; tick(); });
+  }
+  function start(){
+    tick();
+    try{
+      var mo = new MutationObserver(function(){ schedule(); });
+      mo.observe(document.body, {childList:true, subtree:true});
+    }catch(e){}
+    setInterval(tick, 30000);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(start, 60); });
+  } else {
+    setTimeout(start, 60);
+  }
+})();
+</script>
+
 </body>
 </html>
